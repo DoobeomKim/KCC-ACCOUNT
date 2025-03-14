@@ -1,0 +1,308 @@
+{
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "submit": "Einloggen",
+      "error": "Ungültige E-Mail oder Passwort"
+    },
+    "status": {
+      "loggedInAs": "Angemeldet als {email}"
+    }
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "businessExpense": "Reisekosten Eingabe",
+    "expenseList": "Kostenübersicht",
+    "notifications": "Benachrichtigungen",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "countryAllowances": "Länderspezifische Reisekosten",
+    "status": {
+      "loggedInAs": "Aktuell eingeloggt: {email}"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "description": "Verwalten Sie Ihre Kontoeinstellungen und Präferenzen.",
+    "roleInfo": {
+      "admin": "Administrator",
+      "user": "Standardbenutzer",
+      "message": "{email} hat die Berechtigung als {role}"
+    },
+    "companyInfo": {
+      "title": "Unternehmensinformationen",
+      "email": "E-Mail",
+      "companyName": "Firmenname",
+      "companyNamePlaceholder": "Firmennamen",
+      "city": "Stadt",
+      "cityPlaceholder": "Stadt"
+    },
+    "actions": {
+      "save": "Änderungen speichern",
+      "saving": "Wird gespeichert..."
+    },
+    "notifications": {
+      "saveSuccess": "Einstellungen erfolgreich gespeichert",
+      "saveError": "Fehler beim Speichern der Einstellungen",
+      "noSession": "Keine Benutzersitzung gefunden",
+      "error": "Ein Fehler ist aufgetreten"
+    },
+    "validation": {
+      "companyNameRequired": "Bitte geben Sie den Firmennamen ein",
+      "cityRequired": "Bitte geben Sie die Stadt ein"
+    },
+    "status": {
+      "saved": "Gespeichert",
+      "saving": "Wird gespeichert..."
+    }
+  },
+  "expense": {
+    "title": "Reisekosten Eingabe",
+    "description": "",
+    "languageNotice": "Bitte geben Sie Ihre Reisekosten in deutscher oder englischer Sprache ein.",
+    "basicInfo": {
+      "title": "Grundinformationen",
+      "travelerName": {
+        "label": "Name des Reisenden",
+        "placeholder": "Geben Sie den Namen des Reisenden ein"
+      },
+      "startDate": "Startdatum",
+      "startTime": "Startzeit",
+      "endDate": "Enddatum",
+      "endTime": "Endzeit",
+      "date": "Datum"
+    },
+    "mealCalculation": {
+      "title": "Verpflegungspauschale",
+      "travelPeriod": "Reisezeitraum",
+      "totalDays": "Gesamttage",
+      "days": "Tage",
+      "dailyAllowance": "Tagessatz",
+      "totalAllowance": "Gesamtbetrag",
+      "selectDates": "Wählen Sie Start- und Enddatum, um die Verpflegungspauschale automatisch zu berechnen."
+    },
+    "summary": {
+      "title": "Reisekostenübersicht",
+      "loading": "Daten werden geladen...",
+      "noData": "Keine Reisekostendaten vorhanden.",
+      "loadError": "Fehler beim Laden der Daten.",
+      "notFound": "Reisekostendaten nicht gefunden.",
+      "back": "Zurück",
+      "backToList": "Zurück zur Liste",
+      "backToInput": "Zurück zur Eingabe",
+      "edit": "Bearbeiten",
+      "editError": "Fehler beim Wechsel in den Bearbeitungsmodus.",
+      "save": "Endgültig speichern",
+      "saving": "Wird gespeichert...",
+      "saveSuccess": "Reisekosten erfolgreich gespeichert.",
+      "saveError": "Fehler beim Speichern der Reisekosten.",
+      "submitSuccess": "Reisekosten erfolgreich gespeichert.",
+      "savePdf": "Als PDF speichern",
+      "generatingPdf": "PDF wird erstellt...",
+      "pdfSuccess": "PDF wurde erstellt.",
+      "pdfError": "Fehler bei der PDF-Erstellung.",
+      "basicInfo": "Grundinformationen",
+      "visits": "Besuchsinformationen",
+      "transportation": "Transportkosten",
+      "accommodation": "Unterkunftskosten",
+      "entertainment": "Bewirtungskosten",
+      "mealAllowance": "Verpflegungspauschale",
+      "totalCost": "Gesamtkosten",
+      "noVisits": "Keine Besuchsinformationen vorhanden.",
+      "noTransportation": "Keine Transportkosten vorhanden.",
+      "noAccommodation": "Keine Unterkunftskosten vorhanden.",
+      "noEntertainment": "Keine Bewirtungskosten vorhanden.",
+      "noMealAllowance": "Keine Verpflegungspauschale berechnet.",
+      "transportationTotal": "Transportkosten gesamt",
+      "accommodationTotal": "Unterkunftskosten gesamt",
+      "entertainmentTotal": "Bewirtungskosten gesamt",
+      "mealAllowanceTotal": "Verpflegungspauschale gesamt",
+      "grandTotal": "Gesamtsumme"
+    },
+    "visitInfo": {
+      "title": "Besuchsinformationen",
+      "addButton": "+ Besuch hinzufügen",
+      "date": "Datum",
+      "companyName": {
+        "label": "Firma",
+        "placeholder": "Firma"
+      },
+      "city": {
+        "label": "Stadt",
+        "placeholder": "Stadt"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Beschreibung"
+      },
+      "deleteButton": "Löschen"
+    },
+    "paidBy": {
+      "label": "Bezahlt von",
+      "placeholder": "Zahler auswählen",
+      "company": "Von Firma bezahlt",
+      "personal": "Selbst bezahlt"
+    },
+    "allowance": {
+      "meal": {
+        "title": "Verpflegungspauschale",
+        "description": "Möchten Sie auf die Zahlung der Verpflegungspauschale an den Mitarbeiter verzichten?",
+        "willBePaid": "Wird bezahlt",
+        "willNotBePaid": "Wird nicht bezahlt"
+      },
+      "accommodation": {
+        "title": "Unterkunftszuschuss",
+        "description": "Möchten Sie dem Mitarbeiter Unterkunftskosten zahlen?",
+        "willBePaid": "Wird bezahlt",
+        "willNotBePaid": "Wird nicht bezahlt"
+      }
+    },
+    "accommodation": {
+      "title": "Unterkunftsinformationen",
+      "description": "",
+      "addButton": "+ Unterkunft hinzufügen",
+      "item": "Unterkunft #{number}",
+      "willBePaid": "Wird bezahlt",
+      "willNotBePaid": "Wird nicht bezahlt",
+      "type": {
+        "label": "Unterkunftstyp",
+        "placeholder": "Typ auswählen",
+        "hotel": "Hotel",
+        "private": "Privatunterkunft"
+      },
+      "country": {
+        "label": "Land",
+        "placeholder": "Land eingeben"
+      },
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "date": "Datum",
+      "hotelName": {
+        "label": "Hotelname",
+        "placeholder": "Hotelnamen eingeben"
+      },
+      "cityTax": {
+        "label": "Kurtaxe (€)",
+        "placeholder": "0.00"
+      },
+      "vat": {
+        "label": "MwSt. (€)",
+        "placeholder": "0.00"
+      },
+      "totalAmount": {
+        "label": "Gesamtbetrag (inkl. Steuer)",
+        "placeholder": "0.00"
+      },
+      "breakfast": {
+        "title": "Frühstück",
+        "selected": "Frühstück ausgewählt",
+        "notSelected": "Frühstück nicht ausgewählt",
+        "selectDates": "Bitte Check-in/Check-out Datum auswählen"
+      },
+      "deleteButton": "Löschen"
+    },
+    "transportation": {
+      "title": "Transportkosten",
+      "addButton": "+ Transport hinzufügen",
+      "item": "Transport {number}",
+      "type": {
+        "label": "Transportmittel",
+        "placeholder": "Transportmittel auswählen",
+        "flight": "Flug",
+        "taxi": "Taxi",
+        "fuel": "Kraftstoff",
+        "rental": "Mietwagen",
+        "km_pauschale": "Kilometerpauschale"
+      },
+      "date": {
+        "label": "Datum",
+        "placeholder": "Datum"
+      },
+      "mileage": {
+        "label": "Kilometerstand (KM)",
+        "placeholder": "Kilometerstand eingeben"
+      },
+      "licensePlate": {
+        "label": "Kennzeichen",
+        "placeholder": "Kennzeichen eingeben"
+      },
+      "country": {
+        "label": "Land",
+        "placeholder": "Land auswählen",
+        "germany": "Deutschland",
+        "other": "Anderes Land"
+      },
+      "companyName": {
+        "label": "Firma",
+        "placeholder": "Firmenname eingeben"
+      },
+      "vat": {
+        "label": "MwSt.",
+        "placeholder": "0.00"
+      },
+      "totalAmount": {
+        "label": "Gesamtbetrag (inkl. Steuer)",
+        "placeholder": "0.00"
+      },
+      "deleteButton": "Löschen"
+    },
+    "entertainment": {
+      "title": "Bewirtungskosten",
+      "addButton": "+ Bewirtung hinzufügen",
+      "item": "Bewirtung {number}",
+      "type": {
+        "label": "Bewirtungsart",
+        "placeholder": "Bewirtungsart auswählen",
+        "breakfast": "Frühstück",
+        "lunch": "Mittagessen",
+        "dinner": "Abendessen",
+        "coffee": "Kaffee"
+      },
+      "date": {
+        "label": "Datum",
+        "placeholder": "Datum"
+      },
+      "country": {
+        "label": "Land",
+        "placeholder": "Land auswählen",
+        "germany": "Deutschland",
+        "other": "Anderes Land"
+      },
+      "companyName": {
+        "label": "Firma",
+        "placeholder": "Firmenname eingeben"
+      },
+      "vat": {
+        "label": "MwSt.",
+        "placeholder": "0.00"
+      },
+      "totalAmount": {
+        "label": "Gesamtbetrag (inkl. Steuer)",
+        "placeholder": "0.00"
+      },
+      "deleteButton": "Löschen"
+    },
+    "saveButton": "Speichern",
+    "nextStep": "Nächster Schritt",
+    "autoSaved": "Automatisch gespeichert.",
+    "leaveWarning": "Es gibt ungespeicherte Änderungen. Möchten Sie die Seite wirklich verlassen?",
+    "saveError": "Fehler beim Speichern."
+  },
+  "validation": {
+    "nameRequired": "Bitte geben Sie den Namen des Reisenden ein.",
+    "startDateRequired": "Bitte wählen Sie das Startdatum der Reise.",
+    "endDateRequired": "Bitte wählen Sie das Enddatum der Reise.",
+    "purposeRequired": "Bitte geben Sie den Zweck der Reise ein.",
+    "projectNameRequired": "Bitte geben Sie den Projektnamen ein.",
+    "visitRequired": "Mindestens ein Besuch ist erforderlich.",
+    "visitDateRequired": "Bitte wählen Sie das Datum für Besuch {index}.",
+    "visitCompanyRequired": "Bitte geben Sie den Firmennamen für Besuch {index} ein.",
+    "visitCityRequired": "Bitte geben Sie die Stadt für Besuch {index} ein.",
+    "transportationTypeRequired": "Bitte wählen Sie das Transportmittel für Eintrag {index}.",
+    "transportationIncomplete": "Transportkosten-Eintrag {index} ist unvollständig.",
+    "accommodationIncomplete": "Unterkunftskosten-Eintrag {index} ist unvollständig.",
+    "entertainmentIncomplete": "Bewirtungskosten-Eintrag {index} ist unvollständig."
+  }
+} 

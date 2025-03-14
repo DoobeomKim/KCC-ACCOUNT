@@ -1,0 +1,333 @@
+{
+  "auth": {
+    "login": {
+      "title": "로그인",
+      "email": "이메일",
+      "password": "비밀번호",
+      "submit": "로그인",
+      "error": "이메일 또는 비밀번호가 올바르지 않습니다"
+    },
+    "status": {
+      "loggedInAs": "{email} 접속중"
+    }
+  },
+  "navigation": {
+    "dashboard": "대시보드",
+    "businessExpense": "출장경비 입력",
+    "expenseList": "경비 조회",
+    "notifications": "알림",
+    "settings": "설정",
+    "logout": "로그아웃",
+    "countryAllowances": "국가별 출장 비용 관리",
+    "status": {
+      "loggedInAs": "현재 로그인 중: {email}"
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "description": "계정 설정 및 환경설정을 관리합니다.",
+    "roleInfo": {
+      "admin": "관리자",
+      "user": "일반 사용자",
+      "message": "{email}님의 권한은 {role}입니다"
+    },
+    "companyInfo": {
+      "title": "회사 정보",
+      "email": "이메일",
+      "companyName": "회사명",
+      "companyNamePlaceholder": "회사명을 입력하세요",
+      "city": "도시",
+      "cityPlaceholder": "도시를 입력하세요"
+    },
+    "systemSettings": {
+      "title": "시스템 설정",
+      "formDataManagement": {
+        "title": "폼 데이터 관리",
+        "description": "시스템 전체의 폼 데이터 저장 및 삭제 정책을 설정합니다.",
+        "options": {
+          "default": {
+            "label": "기본 옵션",
+            "description": "브라우저 종료 또는 로그아웃 시에만 데이터가 삭제됩니다."
+          },
+          "strict": {
+            "label": "엄격한 보안 옵션",
+            "description": "페이지 이동, 새로고침 시 즉시 데이터가 삭제됩니다."
+          }
+        },
+        "deletionPoints": "데이터가 삭제되는 시점:",
+        "triggers": {
+          "browserClose": "브라우저 종료 시",
+          "logout": "로그아웃 시",
+          "navigation": "페이지 이동 시",
+          "refresh": "페이지 새로고침 시"
+        }
+      }
+    },
+    "actions": {
+      "save": "변경사항 저장",
+      "saving": "저장 중..."
+    },
+    "notifications": {
+      "saveSuccess": "설정이 성공적으로 저장되었습니다",
+      "saveError": "설정 저장 중 오류가 발생했습니다",
+      "noSession": "사용자 세션을 찾을 수 없습니다",
+      "error": "오류가 발생했습니다",
+      "adminOnly": "관리자만 시스템 설정을 변경할 수 있습니다"
+    },
+    "validation": {
+      "companyNameRequired": "회사명을 입력해주세요",
+      "cityRequired": "도시를 입력해주세요"
+    },
+    "status": {
+      "saved": "저장 완료",
+      "saving": "저장 중..."
+    }
+  },
+  "expense": {
+    "title": "출장 경비",
+    "description": "",
+    "languageNotice": "출장 경비는 독일어 또는 영어로 입력해 주세요.",
+    "basicInfo": {
+      "title": "기본 정보",
+      "travelerName": {
+        "label": "출장자 이름",
+        "placeholder": "출장자 이름을 입력하세요"
+      },
+      "startDate": "시작일",
+      "startTime": "시작 시간",
+      "endDate": "종료일",
+      "endTime": "종료 시간",
+      "date": "날짜"
+    },
+    "mealCalculation": {
+      "title": "식대 계산",
+      "travelPeriod": "출장 기간",
+      "totalDays": "총 일수",
+      "days": "일",
+      "dailyAllowance": "일일 식대",
+      "totalAllowance": "총 식대",
+      "selectDates": "출장 시작일과 종료일을 선택하면 식대가 자동으로 계산됩니다."
+    },
+    "saveButton": "저장하기",
+    "nextStep": "다음 단계로",
+    "autoSaved": "자동 저장되었습니다.",
+    "leaveWarning": "작성 중인 내용이 있습니다. 페이지를 나가시겠습니까?",
+    "saveError": "저장 중 오류가 발생했습니다.",
+    "summary": {
+      "title": "출장경비 요약",
+      "loading": "데이터를 불러오는 중...",
+      "noData": "출장경비 데이터가 없습니다.",
+      "loadError": "데이터를 불러오는 중 오류가 발생했습니다.",
+      "notFound": "출장경비 데이터를 찾을 수 없습니다.",
+      "back": "뒤로 가기",
+      "backToList": "목록으로 돌아가기",
+      "backToInput": "입력화면 돌아가기",
+      "edit": "편집하기",
+      "editError": "편집 모드로 전환 중 오류가 발생했습니다.",
+      "save": "최종저장",
+      "saving": "저장 중...",
+      "saveSuccess": "출장경비가 성공적으로 저장되었습니다.",
+      "saveError": "출장경비 저장 중 오류가 발생했습니다.",
+      "submitSuccess": "출장경비가 성공적으로 저장되었습니다.",
+      "savePdf": "PDF 저장",
+      "generatingPdf": "PDF 생성 중...",
+      "pdfSuccess": "PDF가 생성되었습니다.",
+      "pdfError": "PDF 생성 중 오류가 발생했습니다.",
+      "basicInfo": "기본 정보",
+      "visits": "방문지 정보",
+      "transportation": "교통비 정보",
+      "accommodation": "숙박비 정보",
+      "entertainment": "접대비 정보",
+      "mealAllowance": "식대 계산",
+      "totalCost": "총 비용",
+      "noVisits": "방문지 정보가 없습니다.",
+      "noTransportation": "교통비 정보가 없습니다.",
+      "noAccommodation": "숙박비 정보가 없습니다.",
+      "noEntertainment": "접대비 정보가 없습니다.",
+      "noMealAllowance": "식대 계산 정보가 없습니다.",
+      "transportationTotal": "교통비 합계",
+      "accommodationTotal": "숙박비 합계",
+      "entertainmentTotal": "접대비 합계",
+      "mealAllowanceTotal": "식대 합계",
+      "grandTotal": "총 합계"
+    },
+    "visitInfo": {
+      "title": "방문지 정보",
+      "addButton": "+ 방문지 추가",
+      "date": "날짜",
+      "companyName": {
+        "label": "방문 회사",
+        "placeholder": "방문 회사"
+      },
+      "city": {
+        "label": "도시명",
+        "placeholder": "도시명"
+      },
+      "description": {
+        "label": "설명",
+        "placeholder": "설명"
+      },
+      "deleteButton": "삭제"
+    },
+    "paidBy": {
+      "label": "결제자",
+      "placeholder": "결제자 선택",
+      "company": "회사 결제함",
+      "personal": "개인 결제함"
+    },
+    "allowance": {
+      "meal": {
+        "title": "식비 지급",
+        "description": "직원에게 식비를 지급하시겠습니까?",
+        "willBePaid": "지급함",
+        "willNotBePaid": "지급하지 않음"
+      },
+      "accommodation": {
+        "title": "숙박비 지급",
+        "description": "직원에게 숙박비를 지급하시겠습니까?",
+        "willBePaid": "지급함",
+        "willNotBePaid": "지급하지 않음"
+      }
+    },
+    "accommodation": {
+      "title": "숙박비 정보",
+      "description": "",
+      "addButton": "+ 숙박 정보 추가",
+      "item": "숙박 #{number}",
+      "willBePaid": "지급함",
+      "willNotBePaid": "지급하지 않음",
+      "type": {
+        "label": "숙박 유형",
+        "placeholder": "유형 선택",
+        "hotel": "호텔",
+        "private": "개인 숙소"
+      },
+      "country": {
+        "label": "국가",
+        "placeholder": "국가를 입력하세요"
+      },
+      "checkIn": "체크인",
+      "checkOut": "체크아웃",
+      "date": "날짜",
+      "hotelName": {
+        "label": "호텔명",
+        "placeholder": "호텔명을 입력하세요"
+      },
+      "cityTax": {
+        "label": "도시세 (€)",
+        "placeholder": "0.00"
+      },
+      "vat": {
+        "label": "부가세 (€)",
+        "placeholder": "0.00"
+      },
+      "totalAmount": {
+        "label": "총액 (세금 포함)",
+        "placeholder": "0.00"
+      },
+      "breakfast": {
+        "title": "조식 선택",
+        "selected": "조식 선택됨",
+        "notSelected": "조식 선택되지 않음",
+        "selectDates": "체크인/체크아웃 날짜를 선택해주세요"
+      },
+      "deleteButton": "삭제"
+    },
+    "transportation": {
+      "title": "교통비 정보",
+      "addButton": "+ 교통비 추가",
+      "item": "교통비 {number}",
+      "type": {
+        "label": "교통 수단",
+        "placeholder": "교통 수단 선택",
+        "flight": "항공",
+        "taxi": "택시",
+        "fuel": "유류비",
+        "rental": "렌트카",
+        "km_pauschale": "주행거리 수당"
+      },
+      "date": {
+        "label": "날짜",
+        "placeholder": "날짜"
+      },
+      "mileage": {
+        "label": "주행거리 (KM)",
+        "placeholder": "주행거리를 입력하세요"
+      },
+      "licensePlate": {
+        "label": "번호판",
+        "placeholder": "번호판을 입력하세요"
+      },
+      "country": {
+        "label": "국가",
+        "placeholder": "국가 선택",
+        "germany": "독일",
+        "other": "기타 국가"
+      },
+      "companyName": {
+        "label": "업체명",
+        "placeholder": "업체명을 입력하세요"
+      },
+      "vat": {
+        "label": "부가세",
+        "placeholder": "0.00"
+      },
+      "totalAmount": {
+        "label": "총액 (세금 포함)",
+        "placeholder": "0.00"
+      },
+      "deleteButton": "삭제"
+    },
+    "entertainment": {
+      "title": "접대비 정보",
+      "addButton": "+ 접대비 추가",
+      "item": "접대비 {number}",
+      "type": {
+        "label": "접대 유형",
+        "placeholder": "접대 유형 선택",
+        "breakfast": "조찬",
+        "lunch": "중식",
+        "dinner": "석식",
+        "coffee": "커피"
+      },
+      "date": {
+        "label": "날짜",
+        "placeholder": "날짜"
+      },
+      "country": {
+        "label": "국가",
+        "placeholder": "국가 선택",
+        "germany": "독일",
+        "other": "기타 국가"
+      },
+      "companyName": {
+        "label": "업체명",
+        "placeholder": "업체명을 입력하세요"
+      },
+      "vat": {
+        "label": "부가세",
+        "placeholder": "0.00"
+      },
+      "totalAmount": {
+        "label": "총액 (세금 포함)",
+        "placeholder": "0.00"
+      },
+      "deleteButton": "삭제"
+    }
+  },
+  "validation": {
+    "nameRequired": "출장자 이름을 입력해주세요.",
+    "startDateRequired": "출장 시작일을 선택해주세요.",
+    "endDateRequired": "출장 종료일을 선택해주세요.",
+    "purposeRequired": "출장 목적을 입력해주세요.",
+    "projectNameRequired": "프로젝트명을 입력해주세요.",
+    "visitRequired": "최소 하나의 방문지 정보가 필요합니다.",
+    "visitDateRequired": "방문지 {index}의 날짜를 선택해주세요.",
+    "visitCompanyRequired": "방문지 {index}의 회사명을 입력해주세요.",
+    "visitCityRequired": "방문지 {index}의 도시를 입력해주세요.",
+    "transportationTypeRequired": "교통비 항목 {index}의 교통 수단을 선택해주세요.",
+    "transportationIncomplete": "교통비 항목 {index}의 정보가 불완전합니다.",
+    "accommodationIncomplete": "숙박비 항목 {index}의 정보가 불완전합니다.",
+    "entertainmentIncomplete": "접대비 항목 {index}의 정보가 불완전합니다."
+  }
+}

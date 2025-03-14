@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "submit": "Einloggen",
+      "error": "Ungültige E-Mail oder Passwort"
+    }
+  }
+} 
