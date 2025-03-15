@@ -2,47 +2,56 @@
 
 import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSession, forceSetSession } from '@/lib/supabase'
+import { defaultLocale } from '@/i18n/settings'
 
 export default function LoginPage() {
   const t = useTranslations('auth.login')
   const router = useRouter()
-  const pathname = usePathname()
+  // useParams 사용 및 기본값 설정
+  const params = useParams()
+  const locale = params?.locale as string || defaultLocale
+  
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isCheckingSession, setIsCheckingSession] = useState(true)
 
   // 이미 로그인된 사용자 체크
   useEffect(() => {
-    const checkSession = async () => {
+    const checkUserSession = async () => {
       try {
-        console.log('Checking existing session...')
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('Existing session:', session)
+        const session = await checkSession();
         
-        if (session?.user?.aud === 'authenticated') {
-          const locale = pathname.split('/')[1]
-          console.log('User already logged in, redirecting to dashboard...')
-          router.push(`/${locale}/dashboard`)
+        // 세션이 있고, 액세스 토큰이 유효한 경우에만 리다이렉트
+        if (session?.user?.aud === 'authenticated' && session?.access_token) {
+          // 토큰 유효성 검증
+          const { data: { user }, error } = await supabase.auth.getUser(session.access_token)
+          
+          if (user && !error) {
+            router.push(`/${locale}/dashboard`)
+          } else {
+            // 유효하지 않은 세션이면 로그아웃 처리
+            await supabase.auth.signOut()
+          }
         }
       } catch (error) {
-        console.error('Session check error:', error)
+        // 에러 발생 시 로그아웃 처리
+        await supabase.auth.signOut()
       } finally {
         setIsCheckingSession(false)
       }
     }
-    checkSession()
-  }, [pathname, router])
+    checkUserSession()
+  }, [locale, router])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log('Login form submitted')
     setError('')
     setLoading(true)
 
@@ -51,48 +60,67 @@ export default function LoginPage() {
     const password = formData.get('password') as string
 
     try {
-      console.log('Attempting to sign in...')
+      // 기존 세션 정리
+      await supabase.auth.signOut();
+      
+      // 로그인 시도
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (signInError) {
-        console.error('Login error:', signInError)
         setError(t('error'))
         return
       }
 
       if (data?.user) {
-        console.log('Login successful, user:', data.user)
-        const locale = pathname.split('/')[1]
-        console.log('Current locale:', locale)
-        
         // 세션 데이터 저장 확인
-        console.log('Checking session after login...')
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('Session after login:', session)
+        const session = await checkSession();
         
         if (session) {
-          // 리다이렉션 처리
-          const dashboardPath = `/${locale}/dashboard`
-          console.log('Redirecting to:', dashboardPath)
-          
-          // 세션 쿠키 설정
-          document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600; SameSite=Lax`
-          document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=3600; SameSite=Lax`
-          
-          // 쿠키가 설정될 때까지 잠시 대기
-          await new Promise(resolve => setTimeout(resolve, 500))
-          
-          window.location.href = dashboardPath
+          try {
+            // 세션 강제 설정
+            const sessionSet = await forceSetSession(session);
+            
+            // 세션 쿠키 직접 설정
+            document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+            document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+            
+            // 리다이렉션 처리
+            const dashboardPath = `/${locale}/dashboard`
+            
+            // 세션이 설정될 때까지 충분히 대기
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            
+            // 세션 저장을 위한 로컬 스토리지 설정
+            try {
+              localStorage.setItem('supabase-auth-token', JSON.stringify([
+                session.access_token,
+                session.refresh_token
+              ]));
+            } catch (storageError) {
+              // 로컬 스토리지 저장 실패
+            }
+            
+            // 직접 URL 변경 (더 강력한 리다이렉트)
+            router.push(dashboardPath);
+            
+            // 백업 리다이렉트 (위 방법이 실패할 경우)
+            setTimeout(() => {
+              if (window.location.pathname !== dashboardPath) {
+                window.location.href = dashboardPath;
+              }
+            }, 500);
+          } catch (redirectError) {
+            // 에러 발생 시 직접 URL 변경 시도
+            window.location.href = `/${locale}/dashboard`;
+          }
         } else {
-          console.error('No session found after successful login')
           setError(t('error'))
         }
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
       setError(t('error'))
     } finally {
       setLoading(false)

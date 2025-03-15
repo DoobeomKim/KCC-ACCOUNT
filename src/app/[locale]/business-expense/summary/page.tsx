@@ -3,9 +3,9 @@
 import { useTranslations } from 'next-intl'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
-import { format } from 'date-fns'
+import { format as dateFormat } from 'date-fns'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, Loader2, Pencil, FileDown } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Pencil, FileDown, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Sidebar from '@/components/layout/Sidebar'
@@ -772,9 +772,13 @@ export default function BusinessExpenseSummaryPage() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handleBack}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  {expenseId ? t('expense.summary.backToList') : t('expense.summary.backToInput')}
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  className="hover:bg-gray-800 hover:text-white cursor-pointer"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  {t('expense.summary.backButton')}
                 </Button>
                 
                 <Button variant="outline" onClick={handleSavePdf} disabled={isPdfGenerating}>
@@ -784,15 +788,23 @@ export default function BusinessExpenseSummaryPage() {
                 
                 {/* 경비 조회 페이지를 통한 기존 데이터 요약 페이지에서만 편집하기 버튼 표시 */}
                 {expenseId && (
-                  <Button variant="outline" onClick={handleEdit}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    {t('expense.summary.edit')}
+                  <Button
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="hover:bg-gray-800 hover:text-white cursor-pointer"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    {t('expense.summary.editButton')}
                   </Button>
                 )}
                 
                 {(!expenseId || (expenseData && expenseData.status === 'draft')) && (
-                  <Button onClick={handleSave} disabled={isSaving}>
-                    <Save className="mr-2 h-4 w-4" />
+                  <Button
+                    onClick={handleSave}
+                    className="hover:bg-gray-800 hover:text-white cursor-pointer"
+                    disabled={isSaving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
                     {isSaving ? t('expense.summary.saving') : t('expense.summary.save')}
                   </Button>
                 )}
@@ -816,7 +828,7 @@ export default function BusinessExpenseSummaryPage() {
                     <p className="font-medium">
                       {formData.startDate ? (
                         <>
-                          {format(formData.startDate, 'PPP')} {formData.startTime ? `${formData.startTime}` : ''}
+                          {dateFormat(formData.startDate, 'PPP')} {formData.startTime ? `${formData.startTime}` : ''}
                         </>
                       ) : (
                         '-'
@@ -829,7 +841,7 @@ export default function BusinessExpenseSummaryPage() {
                     <p className="font-medium">
                       {formData.endDate ? (
                         <>
-                          {format(formData.endDate, 'PPP')} {formData.endTime ? `${formData.endTime}` : ''}
+                          {dateFormat(formData.endDate, 'PPP')} {formData.endTime ? `${formData.endTime}` : ''}
                         </>
                       ) : (
                         '-'
@@ -872,7 +884,7 @@ export default function BusinessExpenseSummaryPage() {
                             <div>
                               <p className="text-sm text-muted-foreground">{t('expense.visitInfo.date')}</p>
                               <p className="font-medium">
-                                {visit.date ? format(visit.date, 'PPP') : '-'}
+                                {visit.date ? dateFormat(visit.date, 'PPP') : '-'}
                               </p>
                             </div>
                             <div>
@@ -913,7 +925,7 @@ export default function BusinessExpenseSummaryPage() {
                             <div>
                               <p className="text-sm text-muted-foreground">{t('expense.transportation.date.label')}</p>
                               <p className="font-medium">
-                                {item.date ? format(item.date, 'PPP') : '-'}
+                                {item.date ? dateFormat(item.date, 'PPP') : '-'}
                               </p>
                             </div>
                             <div>
@@ -969,6 +981,59 @@ export default function BusinessExpenseSummaryPage() {
                 </CardContent>
               </Card>
               
+              {/* 접대비 정보 요약 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('expense.summary.entertainment')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {formData.entertainment.length > 0 ? (
+                    <div className="space-y-4">
+                      {formData.entertainment.map((item, index) => (
+                        <div key={index} className="border p-4 rounded-md">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.date.label') || '날짜'}</p>
+                              <p className="font-medium">
+                                {item.date ? dateFormat(item.date, 'PPP') : '-'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.type.label') || '유형'}</p>
+                              <p className="font-medium">
+                                {item.type ? (t(`expense.entertainment.type.${item.type}`) || item.type) : '-'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.paidBy.label')}</p>
+                              <p className="font-medium">
+                                {item.paidBy ? t(`expense.paidBy.${item.paidBy}`) : '-'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-2 grid grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.companyName.label') || '회사명'}</p>
+                              <p className="font-medium">{item.companyName || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.vat.label') || '부가세'}</p>
+                              <p className="font-medium">{item.vat ? formatEuro(parseFloat(item.vat), false) : '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.totalAmount.label') || '금액'}</p>
+                              <p className="font-medium">{item.amount ? formatEuro(parseFloat(item.amount), false) : '-'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">{t('expense.summary.noEntertainment')}</p>
+                  )}
+                </CardContent>
+              </Card>
+              
               {/* 숙박비 정보 요약 */}
               <Card>
                 <CardHeader>
@@ -985,7 +1050,7 @@ export default function BusinessExpenseSummaryPage() {
                               <p className="font-medium">
                                 {item.startDate && item.endDate ? (
                                   <>
-                                    {format(item.startDate, 'PPP')} - {format(item.endDate, 'PPP')}
+                                    {dateFormat(item.startDate, 'PPP')} - {dateFormat(item.endDate, 'PPP')}
                                   </>
                                 ) : (
                                   '-'
@@ -1030,59 +1095,6 @@ export default function BusinessExpenseSummaryPage() {
                 </CardContent>
               </Card>
               
-              {/* 접대비 정보 요약 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('expense.summary.entertainment')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {formData.entertainment.length > 0 ? (
-                    <div className="space-y-4">
-                      {formData.entertainment.map((item, index) => (
-                        <div key={index} className="border p-4 rounded-md">
-                          <div className="grid grid-cols-3 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.date.label') || '날짜'}</p>
-                              <p className="font-medium">
-                                {item.date ? format(item.date, 'PPP') : '-'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.type.label') || '유형'}</p>
-                              <p className="font-medium">
-                                {item.type ? (t(`expense.entertainment.type.${item.type}`) || item.type) : '-'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.paidBy.label')}</p>
-                              <p className="font-medium">
-                                {item.paidBy ? t(`expense.paidBy.${item.paidBy}`) : '-'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2 grid grid-cols-3 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.companyName.label') || '회사명'}</p>
-                              <p className="font-medium">{item.companyName || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.vat.label') || '부가세'}</p>
-                              <p className="font-medium">{item.vat ? formatEuro(parseFloat(item.vat), false) : '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.entertainment.totalAmount.label') || '금액'}</p>
-                              <p className="font-medium">{item.amount ? formatEuro(parseFloat(item.amount), false) : '-'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">{t('expense.summary.noEntertainment')}</p>
-                  )}
-                </CardContent>
-              </Card>
-              
               {/* 식대 계산 요약 */}
               <Card>
                 <CardHeader>
@@ -1095,7 +1107,7 @@ export default function BusinessExpenseSummaryPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">{t('expense.mealCalculation.travelPeriod')}</p>
                           <p className="font-medium">
-                            {format(formData.startDate, 'PPP')} → {format(formData.endDate, 'PPP')}
+                            {dateFormat(formData.startDate, 'PPP')} → {dateFormat(formData.endDate, 'PPP')}
                           </p>
                         </div>
                         <div>
@@ -1135,19 +1147,19 @@ export default function BusinessExpenseSummaryPage() {
                       <div>
                         <p className="text-sm text-muted-foreground">{t('expense.summary.transportationTotal')}</p>
                         <p className="font-medium">
-                          {formatEuro(formData.transportation.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0), false)}
+                          {formatEuro(formData.transportation.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">{t('expense.summary.accommodationTotal')}</p>
                         <p className="font-medium">
-                          {formatEuro(formData.accommodations.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0), false)}
+                          {formatEuro(formData.accommodations.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0))}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">{t('expense.summary.entertainmentTotal')}</p>
                         <p className="font-medium">
-                          {formatEuro(formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0), false)}
+                          {formatEuro(formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}
                         </p>
                       </div>
                     </div>
@@ -1169,7 +1181,11 @@ export default function BusinessExpenseSummaryPage() {
                       <div className="flex justify-between items-center">
                         <p className="text-lg font-semibold">{t('expense.summary.grandTotal')}</p>
                         <p className="text-xl font-bold">
-                          {formatEuro(formData.transportation.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0), false)}
+                          {formatEuro(
+                            formData.transportation.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) +
+                            formData.accommodations.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0) +
+                            formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
+                          )}
                         </p>
                       </div>
                     </div>

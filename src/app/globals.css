@@ -128,7 +128,37 @@
   }
 }
 
-/* Tailwind 클래스 덮어쓰기 */
+/* Calendar 스타일 커스터마이징 */
+.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: var(--primary);
+  --rdp-background-color: var(--accent);
+  margin: 0;
+}
+
+.rdp-months {
+  background-color: var(--background);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+}
+
+.rdp-month {
+  background-color: var(--background);
+}
+
+.rdp-day_selected, 
+.rdp-day_selected:focus-visible, 
+.rdp-day_selected:hover {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* 기존 스타일 유지 */
 .bg-gray-100 {
   background-color: var(--background) !important;
 }

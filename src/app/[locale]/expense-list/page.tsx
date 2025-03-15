@@ -271,16 +271,12 @@ export default function ExpenseListPage() {
               <p className="text-gray-500">출장 경비 기록을 관리하고 조회합니다.</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 hover:bg-gray-800 hover:text-white cursor-pointer">
                 <ArrowUpToLine className="h-4 w-4" />
                 내보내기
               </Button>
-              <Button variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                CSV 다운로드
-              </Button>
               <Link href={`/${locale}/business-expense`}>
-                <Button className="gap-2">
+                <Button className="gap-2 hover:bg-gray-800 hover:text-white cursor-pointer">
                   <Plus className="h-4 w-4" />
                   {t('businessExpense')}
                 </Button>
@@ -334,21 +330,6 @@ export default function ExpenseListPage() {
                 </div>
               </CardContent>
             </Card>
-            {userRole === 'admin' && (
-              <Link href={`/${locale}/admin/country-allowances`}>
-                <Card className="hover:bg-gray-50 transition-colors cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium">국가별 출장 비용 관리</span>
-                    </div>
-                    <div className="mt-2">
-                      <span className="text-sm text-gray-500">관리자 전용 설정</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            )}
           </div>
 
           {/* 필터 및 검색 섹션 */}
@@ -439,11 +420,11 @@ export default function ExpenseListPage() {
                           </Button>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={(e) => handleDelete(e, expense.id)}
-                            title="삭제"
+                            className="text-red-500 hover:bg-gray-800 hover:text-white cursor-pointer"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

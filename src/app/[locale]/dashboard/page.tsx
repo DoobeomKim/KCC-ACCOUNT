@@ -1,12 +1,103 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LayoutDashboard, Users, Calendar, TrendingUp } from 'lucide-react'
 import Sidebar from '@/components/layout/Sidebar'
+import { supabase, checkSession } from '@/lib/supabase'
+import { defaultLocale } from '@/i18n/settings'
+import { Loader } from '@/components/ui/loader'
 
 export default function DashboardPage() {
   const t = useTranslations('navigation')
+  const router = useRouter()
+  const params = useParams()
+  const locale = params?.locale as string || defaultLocale
+  
+  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  // 세션 확인 함수
+  const verifySession = async (mounted: boolean = true) => {
+    try {
+      // 세션 확인
+      const session = await checkSession();
+      
+      if (!session && mounted) {
+        router.replace(`/${locale}/auth/login`);
+        return false;
+      }
+      
+      // 세션 유효성 추가 검증
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser(session?.access_token);
+        
+        if ((error || !user) && mounted) {
+          await supabase.auth.signOut();
+          router.replace(`/${locale}/auth/login`);
+          return false;
+        }
+        
+        if (mounted) {
+          // 사용자 정보 설정
+          setUser(user);
+          setIsAuthenticated(true);
+        }
+        return true;
+      } catch (tokenError) {
+        if (mounted) {
+          router.replace(`/${locale}/auth/login`);
+        }
+        return false;
+      }
+    } catch (error) {
+      if (mounted) {
+        router.replace(`/${locale}/auth/login`);
+      }
+      return false;
+    } finally {
+      if (mounted) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  // 초기 세션 확인
+  useEffect(() => {
+    let mounted = true;
+    verifySession(mounted);
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // 주기적 세션 확인 (1분마다)
+  useEffect(() => {
+    let mounted = true;
+    const intervalId = setInterval(() => {
+      verifySession(mounted);
+    }, 60 * 1000); // 1분
+
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
+  }, [locale, router]);
+
+  // 로딩 중이거나 인증되지 않은 경우 표시
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader size={40} />
+          <p>인증 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -16,6 +107,11 @@ export default function DashboardPage() {
         <div className="p-8 space-y-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold tracking-tight">{t('dashboard')}</h1>
+            {user && (
+              <div className="text-sm text-muted-foreground">
+                {user.email}
+              </div>
+            )}
           </div>
 
           {/* 상단 통계 카드 섹션 */}

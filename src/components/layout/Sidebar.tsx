@@ -37,6 +37,7 @@ export default function Sidebar() {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string>('')
   const locale = pathname.split('/')[1]
 
   useEffect(() => {
@@ -44,6 +45,16 @@ export default function Sidebar() {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.email) {
         setUserEmail(session.user.email)
+        // 사용자 권한 확인
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('email', session.user.email)
+          .single()
+
+        if (userProfile) {
+          setUserRole(userProfile.role)
+        }
       }
     }
     getSession()
@@ -70,11 +81,11 @@ export default function Sidebar() {
       icon: List,
       label: t('expenseList')
     },
-    {
+    ...(userRole === 'admin' ? [{
       href: `/${locale}/admin/country-allowances`,
       icon: Globe2,
       label: t('countryAllowances')
-    },
+    }] : []),
     {
       href: `/${locale}/settings`,
       icon: Settings,

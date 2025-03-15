@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import Sidebar from "@/components/layout/Sidebar"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
-import { Check } from "lucide-react"
+import { Check, Save } from "lucide-react"
 
 interface CompanySettings {
   email: string
@@ -354,11 +354,13 @@ export default function SettingsPage() {
                       {t('status.saving')}
                     </div>
                   )}
-                  <Button 
+                  <Button
+                    variant="outline"
                     onClick={handleSave}
-                    disabled={isLoading}
+                    className="hover:bg-gray-800 hover:text-white cursor-pointer"
                   >
-                    {isLoading ? t('actions.saving') : t('actions.save')}
+                    <Save className="h-4 w-4 mr-2" />
+                    {t('save')}
                   </Button>
                 </div>
               </TabsContent>

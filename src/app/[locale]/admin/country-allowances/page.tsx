@@ -24,15 +24,16 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Download, Upload, Plus, Pencil, Check, X, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Download, Upload, Plus, Pencil, Check, X, AlertCircle, CheckCircle2, Trash2 } from "lucide-react"
 import Sidebar from "@/components/layout/Sidebar"
 import { supabase } from "@/lib/supabase"
 import type { CountryAllowance, CountryAllowanceFormData } from "@/types/country-allowances"
 import * as XLSX from 'xlsx'
 import { cn } from "@/lib/utils"
+import { useRouter, usePathname } from 'next/navigation'
 
 interface CountryAllowanceData {
-  id?: number;
+  id: string;
   country_code: string;
   country_name_de: string;
   country_name_ko: string;
@@ -50,7 +51,7 @@ export default function CountryAllowancesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [uploadMessage, setUploadMessage] = useState('')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [formData, setFormData] = useState<CountryAllowanceFormData>({
     country_code: '',
     country_name_de: '',
@@ -59,6 +60,9 @@ export default function CountryAllowancesPage() {
     partial_day_amount: '',
     accommodation_amount: ''
   })
+  const router = useRouter()
+  const pathname = usePathname()
+  const locale = pathname.split('/')[1]
 
   const loadData = async () => {
     try {
@@ -84,6 +88,7 @@ export default function CountryAllowancesPage() {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user?.email) {
           toast.error('세션이 없습니다.')
+          router.push(`/${locale}/expense-list`)
           return
         }
 
@@ -95,6 +100,12 @@ export default function CountryAllowancesPage() {
 
         if (userProfile) {
           setUserRole(userProfile.role)
+          // 관리자가 아닌 경우 접근 제한
+          if (userProfile.role !== 'admin') {
+            toast.error('관리자만 접근할 수 있습니다.')
+            router.push(`/${locale}/expense-list`)
+            return
+          }
         }
 
         // 2. 국가별 출장 비용 데이터 로드
@@ -390,6 +401,27 @@ export default function CountryAllowancesPage() {
     }
   }
 
+  // 삭제 처리
+  const handleDelete = async (id: string) => {
+    if (confirm('정말로 이 국가 정보를 삭제하시겠습니까?')) {
+      try {
+        const { error } = await supabase
+          .from('country_allowances')
+          .delete()
+          .eq('id', id)
+
+        if (error) throw error
+
+        // 목록 새로고침
+        setCountryAllowances(countryAllowances.filter(item => item.id !== id))
+        toast.success('국가 정보가 삭제되었습니다.')
+      } catch (error) {
+        console.error('Error deleting country allowance:', error)
+        toast.error('삭제 중 오류가 발생했습니다.')
+      }
+    }
+  }
+
   if (userRole !== 'admin') {
     return (
       <div className="flex min-h-screen bg-gray-100">
@@ -510,10 +542,19 @@ export default function CountryAllowancesPage() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           onClick={() => handleEdit(allowance)}
+                          className="hover:bg-gray-800 hover:text-white cursor-pointer"
                         >
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(allowance.id)}
+                          className="text-red-500 hover:bg-gray-800 hover:text-white cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
