@@ -15,9 +15,20 @@ interface DatePickerProps {
   setDate: (date: Date | undefined) => void
   disabled?: boolean
   placeholder?: string
+  fromDate?: Date
+  toDate?: Date
+  disabledDays?: (date: Date) => boolean
 }
 
-export default function DatePicker({ date, setDate, disabled = false, placeholder = '날짜 선택' }: DatePickerProps) {
+export default function DatePicker({ 
+  date, 
+  setDate, 
+  disabled = false, 
+  placeholder = '날짜 선택',
+  fromDate,
+  toDate,
+  disabledDays
+}: DatePickerProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -32,7 +43,7 @@ export default function DatePicker({ date, setDate, disabled = false, placeholde
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, 'PPP') : placeholder}
+          {date && date instanceof Date && !isNaN(date.getTime()) ? format(date, 'PPP') : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
@@ -44,6 +55,9 @@ export default function DatePicker({ date, setDate, disabled = false, placeholde
             setDate(day);
             setOpen(false);
           }}
+          disabled={disabledDays}
+          fromDate={fromDate}
+          toDate={toDate}
           initialFocus
         />
       </PopoverContent>

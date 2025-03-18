@@ -11,6 +11,7 @@
       "loggedInAs": "{email} 접속중"
     }
   },
+  "locale": "ko",
   "navigation": {
     "dashboard": "대시보드",
     "businessExpense": "출장경비 입력",
@@ -87,6 +88,10 @@
     "title": "출장 경비",
     "description": "",
     "languageNotice": "출장 경비는 독일어 또는 영어로 입력해 주세요.",
+    "common": {
+      "collapse": "접기",
+      "expand": "펼치기"
+    },
     "basicInfo": {
       "title": "기본 정보",
       "travelerName": {
@@ -313,6 +318,40 @@
         "placeholder": "0.00"
       },
       "deleteButton": "삭제"
+    },
+    "mealAllowanceDetails": {
+      "title": "식대 관련 여행 정보",
+      "date": "날짜",
+      "startDate": "출발일",
+      "startTime": "출발 시간",
+      "endDate": "종료일",
+      "endTime": "종료 시간",
+      "city": "국가",
+      "description": "설명",
+      "add": "+ 정보 추가",
+      "cityPlaceholder": "국가를 입력하세요",
+      "descriptionPlaceholder": "설명을 입력하세요",
+      "deleteButton": "삭제",
+      "selectDate": "날짜 선택",
+      "item": "여행 정보 #{number}",
+      "tripType": {
+        "label": "출장 종류",
+        "placeholder": "출장 종류 선택",
+        "international": "국가간 이동",
+        "domestic": "국내 이동"
+      },
+      "departureLocation": {
+        "country": "출발 국가",
+        "countryPlaceholder": "출발 국가를 입력하세요",
+        "city": "출발 도시",
+        "cityPlaceholder": "출발 도시를 입력하세요"
+      },
+      "arrivalLocation": {
+        "country": "도착 국가",
+        "countryPlaceholder": "도착 국가를 입력하세요",
+        "city": "도착 도시",
+        "cityPlaceholder": "도착 도시를 입력하세요"
+      }
     }
   },
   "validation": {

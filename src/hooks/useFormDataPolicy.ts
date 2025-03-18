@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -24,6 +24,9 @@ const strictConfig: FormDataPolicyConfig = {
   onNavigation: true,
   onRefresh: true
 }
+
+// 디바운스 시간 설정 (밀리초)
+const DEBOUNCE_DELAY = 500;
 
 export function useFormDataPolicy(storageKey: string) {
   const [policy, setPolicy] = useState<FormDataPolicy>('default')
@@ -83,18 +86,31 @@ export function useFormDataPolicy(storageKey: string) {
     }
   }, [policy, storageKey])
 
-  // 데이터 저장
+  // 디바운스 타이머 참조
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 데이터 저장 (디바운싱 적용)
   const saveFormData = (data: any) => {
     console.log('saveFormData 호출됨', storageKey);
-    const config = policy === 'strict' ? strictConfig : defaultConfig
-    if (config.onBrowserClose) {
-      console.log('sessionStorage에 데이터 저장');
-      sessionStorage.setItem(storageKey, JSON.stringify(data))
-    } else {
-      console.log('localStorage에 데이터 저장');
-      localStorage.setItem(storageKey, JSON.stringify(data))
+    
+    // 이전 타이머가 있으면 취소
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
-    console.log('데이터 저장 완료');
+    
+    // 설정된 시간 후에 저장 실행
+    debounceTimerRef.current = setTimeout(() => {
+      const config = policy === 'strict' ? strictConfig : defaultConfig
+      if (config.onBrowserClose) {
+        console.log('sessionStorage에 데이터 저장');
+        sessionStorage.setItem(storageKey, JSON.stringify(data))
+      } else {
+        console.log('localStorage에 데이터 저장');
+        localStorage.setItem(storageKey, JSON.stringify(data))
+      }
+      console.log('데이터 저장 완료');
+      debounceTimerRef.current = null;
+    }, DEBOUNCE_DELAY);
   }
 
   // 데이터 로드

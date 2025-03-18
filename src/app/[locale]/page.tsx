@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation'
 import { defaultLocale } from '@/i18n/settings'
 
-export default async function LocalePage({
+export default function LocalePage({
   params,
 }: {
-  params: Promise<{ locale: string }>
+  params: { locale: string }
 }) {
-  // params를 await로 처리하고 기본값 설정
-  const { locale = defaultLocale } = await params;
+  const locale = params?.locale || defaultLocale
   
+  // 무조건 로그인 페이지로 리다이렉트
   redirect(`/${locale}/auth/login`)
 } 

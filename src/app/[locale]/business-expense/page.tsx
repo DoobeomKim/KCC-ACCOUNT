@@ -26,6 +26,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList
 } from "@/components/ui/command"
 import {
   Popover,
@@ -57,6 +58,9 @@ import {
   AlertDescription 
 } from "@/components/ui/alert"
 import { AccommodationCalendar } from '@/components/AccommodationCalendar'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
+import MealAllowanceInfo from '@/components/MealAllowanceInfo'
 
 // ExpenseForm 인터페이스를 export로 변경
 export interface ExpenseForm {
@@ -80,6 +84,22 @@ export interface ExpenseForm {
   accommodationOption: boolean
   date: Date | undefined
   amount: string
+  mealAllowanceInfo: {
+    startDate?: Date
+    startTime: string
+    endDate?: Date
+    endTime: string
+    city: string
+    description: string
+    startDatePickerOpen?: boolean
+    endDatePickerOpen?: boolean
+    isExpanded?: boolean
+    tripType?: 'international' | 'domestic'
+    departureCountry?: string
+    departureCity?: string
+    arrivalCountry?: string
+    arrivalCity?: string
+  }[]
   accommodations: {
     startDate: Date | undefined
     endDate: Date | undefined
@@ -356,6 +376,7 @@ export default function BusinessExpensePage() {
     accommodationOption: true,
     date: undefined,
     amount: '',
+    mealAllowanceInfo: [],
     accommodations: [],
     transportation: [],
     entertainment: [],
@@ -375,6 +396,7 @@ export default function BusinessExpensePage() {
     transportationInfo: true,
     mealInfo: true,
     entertainmentInfo: true,
+    mealAllowanceInfo: true
   })
   const [loadingSettings, setLoadingSettings] = useState(false)
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null)
@@ -589,9 +611,15 @@ export default function BusinessExpensePage() {
   // 데이터 변경 시 저장
   const updateFormData = (key: keyof ExpenseForm, value: any) => {
     console.log(`폼 데이터 업데이트 - 키: ${key}`, key === 'visits' ? '방문 데이터 업데이트됨' : value);
+    if (key === 'mealAllowanceInfo') {
+      console.log('식대 관련 여행 정보 업데이트:', value);
+    }
     const newData = { ...formData, [key]: value };
     setFormData(newData);
     console.log('새 폼 데이터 설정됨', key === 'visits' ? `방문 데이터 개수: ${newData.visits.length}` : '');
+    if (key === 'mealAllowanceInfo') {
+      console.log('업데이트된 식대 관련 여행 정보:', newData.mealAllowanceInfo);
+    }
     saveFormData(newData);
     console.log('폼 데이터 저장됨');
   };
@@ -2305,6 +2333,61 @@ export default function BusinessExpensePage() {
                 </CardContent>
               </Card>
 
+              {/* 식대 관련 여행 정보 */}
+              <Card className="mb-4">
+                <CardContent className="pt-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">{t('expense.mealAllowanceDetails.title')}</h2>
+                    <Button
+                      onClick={() => {
+                        // 새로운 식대 관련 여행 정보 추가
+                        const newMealAllowanceInfo = [
+                          ...formData.mealAllowanceInfo,
+                          { 
+                            startDate: undefined, 
+                            startTime: '', 
+                            endDate: undefined, 
+                            endTime: '', 
+                            city: '', 
+                            description: '', 
+                            startDatePickerOpen: false,
+                            endDatePickerOpen: false,
+                            isExpanded: true, // 새로 추가된 항목은 펼쳐진 상태로 시작
+                            tripType: undefined,
+                            departureCountry: '',
+                            departureCity: '',
+                            arrivalCountry: '',
+                            arrivalCity: ''
+                          }
+                        ];
+                        updateFormData('mealAllowanceInfo', newMealAllowanceInfo);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {t("expense.mealAllowanceDetails.add")}
+                    </Button>
+                  </div>
+                  
+                  {/* MealAllowanceInfo 컴포넌트 사용 */}
+                  <MealAllowanceInfo 
+                    mealAllowanceInfo={formData.mealAllowanceInfo}
+                    onChange={(newInfo) => updateFormData('mealAllowanceInfo', newInfo)}
+                    tripStartDate={formData.startDate}
+                    tripEndDate={formData.endDate}
+                    entertainmentExpenses={formData.entertainment
+                      .filter(ent => ent.date instanceof Date && !isNaN(ent.date.getTime()))
+                      .map(ent => ({
+                        date: dateFormat(ent.date!, 'yyyy-MM-dd'),
+                        breakfast: ent.type === 'breakfast',
+                        lunch: ent.type === 'lunch',
+                        dinner: ent.type === 'dinner'
+                      }))
+                    }
+                  />
+                </CardContent>
+              </Card>
+
               {/* 비용 합계 정보 */}
               <Card className="border border-gray-200 mb-4">
                 <CardContent className="pt-4 pb-2">
@@ -2401,52 +2484,6 @@ export default function BusinessExpensePage() {
                 </CardContent>
               </Card>
               
-              {/* 식대 계산 정보 */}
-              <Card className="mb-4">
-                <CardContent className="pt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">{t("expense.mealCalculation.title")}</h2>
-                  </div>
-                  <div className="space-y-4">
-                    {formData.startDate && formData.endDate ? (
-                      <>
-                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded">
-                          <div>
-                            <p className="font-medium">{t("expense.mealCalculation.travelPeriod")}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {dateFormat(formData.startDate, "PPP")} → {dateFormat(formData.endDate, "PPP")}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">{t("expense.mealCalculation.totalDays")}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {Math.ceil((formData.endDate.getTime() - formData.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1}{t("expense.mealCalculation.days")}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded">
-                          <div className="flex justify-between items-center">
-                            <p className="font-medium">{t("expense.mealCalculation.dailyAllowance")}</p>
-                            <p className="text-muted-foreground">28€</p>
-                          </div>
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="font-medium">{t("expense.mealCalculation.totalAllowance")}</p>
-                            <p className="text-lg font-semibold">
-                              {formData.startDate && formData.endDate ? 
-                                (Math.ceil((formData.endDate.getTime() - formData.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1) * 28 : 0}€
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center text-muted-foreground py-4">
-                        {t("expense.mealCalculation.selectDates")}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* 저장 버튼 */}
               <div className="flex justify-end pt-4">
                 <Button onClick={handleCreateExpense}>

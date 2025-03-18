@@ -11,6 +11,7 @@
       "loggedInAs": "Angemeldet als {email}"
     }
   },
+  "locale": "de",
   "navigation": {
     "dashboard": "Dashboard",
     "businessExpense": "Reisekosten Eingabe",
@@ -62,6 +63,10 @@
     "title": "Reisekosten Eingabe",
     "description": "",
     "languageNotice": "Bitte geben Sie Ihre Reisekosten in deutscher oder englischer Sprache ein.",
+    "common": {
+      "collapse": "Einklappen",
+      "expand": "Ausklappen"
+    },
     "basicInfo": {
       "title": "Grundinformationen",
       "travelerName": {
@@ -283,6 +288,40 @@
         "placeholder": "0.00"
       },
       "deleteButton": "Löschen"
+    },
+    "mealAllowanceDetails": {
+      "title": "Reiseinformationen für Verpflegungskosten",
+      "date": "Datum",
+      "startDate": "Abreisedatum",
+      "startTime": "Abreisezeit",
+      "endDate": "Rückkehrdatum",
+      "endTime": "Rückkehrzeit",
+      "city": "Land",
+      "description": "Beschreibung",
+      "add": "+ Information hinzufügen",
+      "cityPlaceholder": "Land eingeben",
+      "descriptionPlaceholder": "Beschreibung eingeben",
+      "deleteButton": "Löschen",
+      "selectDate": "Datum auswählen",
+      "item": "Reiseinfo #{number}",
+      "tripType": {
+        "label": "Reiseart",
+        "placeholder": "Reiseart auswählen",
+        "international": "Internationale Reise",
+        "domestic": "Inlandsreise"
+      },
+      "departureLocation": {
+        "country": "Abfahrtsland",
+        "countryPlaceholder": "Abfahrtsland eingeben",
+        "city": "Abfahrtsstadt",
+        "cityPlaceholder": "Abfahrtsstadt eingeben"
+      },
+      "arrivalLocation": {
+        "country": "Ankunftsland",
+        "countryPlaceholder": "Ankunftsland eingeben",
+        "city": "Ankunftsstadt",
+        "cityPlaceholder": "Ankunftsstadt eingeben"
+      }
     },
     "saveButton": "Speichern",
     "nextStep": "Nächster Schritt",

@@ -14,48 +14,270 @@ export default function DashboardPage() {
   const t = useTranslations('navigation')
   const router = useRouter()
   const params = useParams()
-  const locale = params?.locale as string || defaultLocale
+  const locale = (params?.locale as string) || defaultLocale
   
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
+  // 로그인 페이지 리디렉션 함수
+  const redirectToLogin = () => {
+    try {
+      console.log('[클라이언트] 로그아웃 처리 시작');
+      
+      // 플래그 설정 - 중복 리디렉션 방지
+      sessionStorage.setItem('auth_redirect_in_progress', 'true');
+      
+      // 토큰 삭제 (쿠키)
+      document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      
+      // localStorage 토큰 삭제
+      localStorage.removeItem('sb-access-token');
+      localStorage.removeItem('sb-refresh-token');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('lastLoginTime');
+      
+      // sessionStorage 토큰 삭제
+      sessionStorage.removeItem('sb-access-token');
+      sessionStorage.removeItem('sb-refresh-token');
+      sessionStorage.removeItem('isAuthenticated');
+      
+      // 로그아웃 처리 후 리디렉션
+      supabase.auth.signOut().then(() => {
+        console.log('[클라이언트] 로그아웃 처리 완료, 로그인 페이지로 이동');
+        window.location.href = `/${locale}/auth/login`;
+        
+        // 플래그는 3초 후 제거
+        setTimeout(() => {
+          sessionStorage.removeItem('auth_redirect_in_progress');
+        }, 3000);
+      }).catch(e => {
+        console.error('[클라이언트] 로그아웃 오류:', e);
+        window.location.href = `/${locale}/auth/login`;
+      });
+    } catch (e) {
+      console.error('[클라이언트] 리디렉션 오류:', e);
+      window.location.href = `/${locale}/auth/login`;
+    }
+  };
+
   // 세션 확인 함수
   const verifySession = async (mounted: boolean = true) => {
     try {
-      // 세션 확인
-      const session = await checkSession();
+      console.log('[클라이언트] [1단계] 대시보드 페이지 접근');
       
-      if (!session && mounted) {
-        router.replace(`/${locale}/auth/login`);
+      // 리디렉션 중복 방지 체크 (sessionStorage 사용)
+      const redirectInProgress = sessionStorage.getItem('auth_redirect_in_progress') === 'true';
+      if (redirectInProgress) {
+        console.log('[클라이언트] 리디렉션 진행 중 - 세션 체크 건너뜀');
         return false;
       }
       
-      // 세션 유효성 추가 검증
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser(session?.access_token);
-        
-        if ((error || !user) && mounted) {
-          await supabase.auth.signOut();
-          router.replace(`/${locale}/auth/login`);
-          return false;
-        }
-        
+      // 빠른 체크: 로컬스토리지 인증 상태 확인
+      const isAuth = localStorage.getItem('isAuthenticated');
+      const lastLogin = localStorage.getItem('lastLoginTime');
+      const timeNow = Date.now();
+      const loginTime = lastLogin ? parseInt(lastLogin) : 0;
+      const loginTimeDiff = timeNow - loginTime;
+      
+      // 최근 30초 이내에 로그인했으면 인증 상태로 간주
+      if (isAuth === 'true' && loginTimeDiff < 30000) {
+        console.log('[클라이언트] 최근 로그인 내역 확인됨, 세션 인증됨으로 처리');
         if (mounted) {
-          // 사용자 정보 설정
-          setUser(user);
           setIsAuthenticated(true);
+          setIsLoading(false);
+          
+          // 백그라운드에서 세션 정보 가져오기
+          supabase.auth.getUser().then(({ data }) => {
+            if (data?.user && mounted) {
+              setUser(data.user);
+            }
+          });
         }
         return true;
-      } catch (tokenError) {
+      }
+      
+      // 토큰 확인 (localStorage, sessionStorage, 쿠키 모두 확인)
+      const localAccessToken = localStorage.getItem('sb-access-token');
+      const localRefreshToken = localStorage.getItem('sb-refresh-token');
+      const sessionAccessToken = sessionStorage.getItem('sb-access-token');
+      
+      const cookieAccessToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('sb-access-token='))
+        ?.split('=')[1];
+      
+      console.log('[클라이언트] [2단계] 인증 토큰 확인:');
+      console.log('- 로컬스토리지 토큰:', localAccessToken ? '있음' : '없음');
+      console.log('- 세션스토리지 토큰:', sessionAccessToken ? '있음' : '없음');
+      console.log('- 쿠키 토큰:', cookieAccessToken ? '있음' : '없음');
+      
+      // 사용가능한 토큰 (우선순위: cookie > localStorage > sessionStorage)
+      const accessToken = cookieAccessToken || localAccessToken || sessionAccessToken;
+      
+      // 모든 저장소에 토큰이 없으면 로그인 페이지로 이동
+      if (!accessToken) {
+        console.log('[클라이언트] 사용 가능한 토큰이 없음 - 로그인 페이지로 이동');
         if (mounted) {
-          router.replace(`/${locale}/auth/login`);
+          redirectToLogin();
         }
         return false;
       }
-    } catch (error) {
+      
+      // 토큰 저장소 일치화: 발견된 토큰을 모든 저장소에 저장
+      if (accessToken) {
+        if (!cookieAccessToken) {
+          console.log('[클라이언트] 쿠키에 토큰 저장');
+          document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+          
+          if (localRefreshToken) {
+            document.cookie = `sb-refresh-token=${localRefreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+          }
+        }
+        
+        if (!localAccessToken) {
+          console.log('[클라이언트] localStorage에 토큰 저장');
+          localStorage.setItem('sb-access-token', accessToken);
+          if (localRefreshToken) {
+            localStorage.setItem('sb-refresh-token', localRefreshToken);
+          }
+        }
+        
+        if (!sessionAccessToken) {
+          console.log('[클라이언트] sessionStorage에 토큰 저장');
+          sessionStorage.setItem('sb-access-token', accessToken);
+          if (localRefreshToken) {
+            sessionStorage.setItem('sb-refresh-token', localRefreshToken);
+          }
+        }
+      }
+      
+      // Supabase 세션 설정 (토큰이 있지만 세션이 없는 경우 대비)
+      try {
+        const { data: sessionCheck } = await supabase.auth.getSession();
+        if (!sessionCheck.session && accessToken) {
+          console.log('[클라이언트] Supabase 세션 없음, 토큰으로 세션 설정 시도');
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: localRefreshToken || ''
+          });
+        }
+      } catch (e) {
+        console.error('[클라이언트] 세션 설정 오류:', e);
+      }
+      
+      // 사용자 정보 확인
+      console.log('[클라이언트] [3단계] 사용자 정보 확인');
+      const { data: { user: userInfo }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userInfo) {
+        console.log('[클라이언트] 사용자 정보 확인 실패:', userError?.message || '사용자 없음');
+        console.log('[클라이언트] 토큰으로 직접 사용자 정보 확인 시도');
+        
+        // 직접 토큰으로 사용자 정보 확인
+        try {
+          const { data: tokenUserData, error: tokenUserError } = await supabase.auth.getUser(accessToken);
+          
+          if (tokenUserError || !tokenUserData?.user) {
+            console.log('[클라이언트] 토큰으로 사용자 확인 실패:', tokenUserError?.message || '사용자 없음');
+            
+            // 리프레시 토큰으로 세션 갱신 시도
+            if (localRefreshToken) {
+              console.log('[클라이언트] 리프레시 토큰으로 세션 갱신 시도');
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                refresh_token: localRefreshToken
+              });
+              
+              if (!refreshError && refreshData?.session && refreshData?.user) {
+                console.log('[클라이언트] 세션 갱신 성공, 사용자:', refreshData.user.email);
+                
+                // 새로운 토큰 저장
+                localStorage.setItem('sb-access-token', refreshData.session.access_token);
+                localStorage.setItem('sb-refresh-token', refreshData.session.refresh_token);
+                sessionStorage.setItem('sb-access-token', refreshData.session.access_token);
+                sessionStorage.setItem('sb-refresh-token', refreshData.session.refresh_token);
+                
+                document.cookie = `sb-access-token=${refreshData.session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+                document.cookie = `sb-refresh-token=${refreshData.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+                
+                if (mounted) {
+                  setUser(refreshData.user);
+                  setIsAuthenticated(true);
+                  setIsLoading(false);
+                  
+                  // 인증 상태 저장
+                  localStorage.setItem('isAuthenticated', 'true');
+                  localStorage.setItem('lastLoginTime', Date.now().toString());
+                  sessionStorage.setItem('isAuthenticated', 'true');
+                }
+                return true;
+              } else {
+                console.log('[클라이언트] 세션 갱신 실패:', refreshError?.message);
+                if (mounted) {
+                  redirectToLogin();
+                }
+                return false;
+              }
+            } else {
+              // 리프레시 토큰도 없으면 로그인 페이지로
+              if (mounted) {
+                redirectToLogin();
+              }
+              return false;
+            }
+          } else {
+            // 토큰으로 사용자 확인 성공
+            console.log('[클라이언트] 토큰으로 사용자 확인 성공:', tokenUserData.user.email);
+            if (mounted) {
+              setUser(tokenUserData.user);
+              setIsAuthenticated(true);
+              setIsLoading(false);
+              
+              // 인증 상태 저장
+              localStorage.setItem('isAuthenticated', 'true');
+              localStorage.setItem('lastLoginTime', Date.now().toString());
+              sessionStorage.setItem('isAuthenticated', 'true');
+            }
+            return true;
+          }
+        } catch (e) {
+          console.error('[클라이언트] 토큰 검증 오류:', e);
+          if (mounted) {
+            redirectToLogin();
+          }
+          return false;
+        }
+      }
+      
+      // 사용자 정보 확인 성공
+      console.log('[클라이언트] [4단계] 인증 성공 - 사용자:', userInfo?.email || 'unknown');
+      
+      // 최신 세션 정보 가져와서 저장소 업데이트
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        // 모든 저장소에 토큰 업데이트
+        localStorage.setItem('sb-access-token', sessionData.session.access_token);
+        localStorage.setItem('sb-refresh-token', sessionData.session.refresh_token);
+        sessionStorage.setItem('sb-access-token', sessionData.session.access_token);
+        sessionStorage.setItem('sb-refresh-token', sessionData.session.refresh_token);
+      }
+      
       if (mounted) {
-        router.replace(`/${locale}/auth/login`);
+        setUser(userInfo);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        
+        // 인증 상태 저장
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('lastLoginTime', Date.now().toString());
+        sessionStorage.setItem('isAuthenticated', 'true');
+      }
+      return true;
+    } catch (error) {
+      console.error('[클라이언트] 세션 확인 오류:', error);
+      if (mounted) {
+        redirectToLogin();
       }
       return false;
     } finally {
