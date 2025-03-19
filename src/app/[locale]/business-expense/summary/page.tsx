@@ -225,7 +225,7 @@ export default function BusinessExpenseSummaryPage() {
           if (transportationData) {
             formattedData.transportation = transportationData.map(item => ({
               date: item.date ? parseDateFromStorage(item.date) : undefined,
-              type: item.type as 'flight' | 'taxi' | 'fuel' | 'rental' | 'km_pauschale' | undefined,
+              type: item.type as 'flight' | 'train' | 'taxi' | 'fuel' | 'rental' | 'km_pauschale' | undefined,
               country: item.country || '',
               companyName: item.company_name || '',
               paidBy: item.paid_by as 'company' | 'personal' | undefined,
@@ -851,19 +851,11 @@ export default function BusinessExpenseSummaryPage() {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">{t('expense.allowance.meal.title') || '식비 지급'}</p>
+                      <p className="text-sm text-muted-foreground">{t('expense.allowance.meal.title') || '일괄 식비 지급'}</p>
                       <p className="font-medium">
                         {formData.mealOption 
                           ? (t('expense.allowance.meal.willBePaid') || '지급함') 
                           : (t('expense.allowance.meal.willNotBePaid') || '지급하지 않음')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{t('expense.allowance.accommodation.title') || '숙박비 지급'}</p>
-                      <p className="font-medium">
-                        {formData.accommodationOption 
-                          ? (t('expense.allowance.accommodation.willBePaid') || '지급함') 
-                          : (t('expense.allowance.accommodation.willNotBePaid') || '지급하지 않음')}
                       </p>
                     </div>
                   </div>

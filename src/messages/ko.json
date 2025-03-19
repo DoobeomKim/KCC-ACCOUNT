@@ -182,7 +182,7 @@
     },
     "allowance": {
       "meal": {
-        "title": "식비 지급",
+        "title": "일괄 식비 지급",
         "description": "직원에게 식비를 지급하시겠습니까?",
         "willBePaid": "지급함",
         "willNotBePaid": "지급하지 않음"
@@ -246,6 +246,7 @@
         "label": "교통 수단",
         "placeholder": "교통 수단 선택",
         "flight": "항공",
+        "train": "기차",
         "taxi": "택시",
         "fuel": "유류비",
         "rental": "렌트카",

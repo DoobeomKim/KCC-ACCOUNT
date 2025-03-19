@@ -77,201 +77,235 @@ export default function DashboardPage() {
       // 빠른 체크: 로컬스토리지 인증 상태 확인
       const isAuth = localStorage.getItem('isAuthenticated');
       const lastLogin = localStorage.getItem('lastLoginTime');
-      const accessToken = localStorage.getItem('sb-access-token');
-      const refreshToken = localStorage.getItem('sb-refresh-token');
       const timeNow = Date.now();
       const loginTime = lastLogin ? parseInt(lastLogin) : 0;
       const loginTimeDiff = timeNow - loginTime;
       
-      // 최근 로그인했고 토큰이 있으면 인증 상태로 간주
-      if (isAuth === 'true' && accessToken) {
-        console.log('[클라이언트] 로컬 스토리지에 인증 상태 확인됨');
-        
-        // 토큰을 쿠키에도 설정 (없을 경우)
-        const cookieAccessToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('sb-access-token='))
-          ?.split('=')[1];
-          
-        if (!cookieAccessToken && accessToken) {
-          console.log('[클라이언트] 쿠키에 토큰 설정');
-          document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-          if (refreshToken) {
-            document.cookie = `sb-refresh-token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-          }
-        }
-        
+      // 최근 30초 이내에 로그인했으면 인증 상태로 간주
+      if (isAuth === 'true' && loginTimeDiff < 30000) {
+        console.log('[클라이언트] 최근 로그인 내역 확인됨, 세션 인증됨으로 처리');
         if (mounted) {
           setIsAuthenticated(true);
+          setIsLoading(false);
           
-          // 최근 30초 이내에 로그인했으면 Supabase 세션 체크 생략
-          if (loginTimeDiff < 30000) {
-            console.log('[클라이언트] 최근 로그인, 세션 체크 생략');
-            setIsLoading(false);
-            
-            // 백그라운드에서 사용자 정보 가져오기
-            supabase.auth.getUser().then(({ data }) => {
-              if (data?.user && mounted) {
-                setUser(data.user);
-              }
-            });
-            return true;
-          }
-          
-          // Supabase 세션 설정 (토큰이 있지만 세션이 없는 경우 대비)
-          try {
-            const { data: sessionCheck } = await supabase.auth.getSession();
-            if (!sessionCheck.session && accessToken) {
-              console.log('[클라이언트] Supabase 세션 없음, 토큰으로 세션 설정');
-              await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken || ''
-              });
+          // 백그라운드에서 세션 정보 가져오기
+          supabase.auth.getUser().then(({ data }) => {
+            if (data?.user && mounted) {
+              setUser(data.user);
             }
-            
-            // 사용자 정보 확인
-            const { data: { user: userInfo }, error: userError } = await supabase.auth.getUser();
-            
-            if (userError || !userInfo) {
-              console.log('[클라이언트] 사용자 정보 확인 실패, 로컬 저장소 토큰으로 시도');
-              const { data: tokenUserData, error: tokenUserError } = await supabase.auth.getUser(accessToken);
-              
-              if (tokenUserError || !tokenUserData?.user) {
-                // 리프레시 토큰으로 세션 갱신 시도
-                if (refreshToken) {
-                  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
-                    refresh_token: refreshToken
-                  });
-                  
-                  if (!refreshError && refreshData?.session) {
-                    console.log('[클라이언트] 세션 갱신 성공');
-                    setUser(refreshData.user);
-                    setIsLoading(false);
-                    // 새 토큰 저장
-                    localStorage.setItem('sb-access-token', refreshData.session.access_token);
-                    localStorage.setItem('sb-refresh-token', refreshData.session.refresh_token);
-                    localStorage.setItem('lastLoginTime', Date.now().toString());
-                    return true;
-                  } else {
-                    console.log('[클라이언트] 세션 갱신 실패, 로그인 페이지로 이동');
-                    redirectToLogin();
-                    return false;
-                  }
-                } else {
-                  redirectToLogin();
-                  return false;
-                }
-              } else {
-                // 로컬 토큰으로 사용자 확인 성공
-                setUser(tokenUserData.user);
-                setIsLoading(false);
-                return true;
-              }
-            } else {
-              // 사용자 정보 확인 성공
-              setUser(userInfo);
-              setIsLoading(false);
-              return true;
-            }
-          } catch (e) {
-            console.error('[클라이언트] 세션 확인 오류:', e);
-            redirectToLogin();
-            return false;
-          }
+          });
         }
         return true;
-      } else {
-        // 인증 정보 없음
-        console.log('[클라이언트] 로컬 스토리지에 인증 정보 없음');
+      }
+      
+      // 토큰 확인 (localStorage, sessionStorage, 쿠키 모두 확인)
+      const localAccessToken = localStorage.getItem('sb-access-token');
+      const localRefreshToken = localStorage.getItem('sb-refresh-token');
+      const sessionAccessToken = sessionStorage.getItem('sb-access-token');
+      
+      const cookieAccessToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('sb-access-token='))
+        ?.split('=')[1];
+      
+      console.log('[클라이언트] [2단계] 인증 토큰 확인:');
+      console.log('- 로컬스토리지 토큰:', localAccessToken ? '있음' : '없음');
+      console.log('- 세션스토리지 토큰:', sessionAccessToken ? '있음' : '없음');
+      console.log('- 쿠키 토큰:', cookieAccessToken ? '있음' : '없음');
+      
+      // 사용가능한 토큰 (우선순위: cookie > localStorage > sessionStorage)
+      const accessToken = cookieAccessToken || localAccessToken || sessionAccessToken;
+      
+      // 모든 저장소에 토큰이 없으면 로그인 페이지로 이동
+      if (!accessToken) {
+        console.log('[클라이언트] 사용 가능한 토큰이 없음 - 로그인 페이지로 이동');
+        if (mounted) {
+          redirectToLogin();
+        }
+        return false;
+      }
+      
+      // 토큰 저장소 일치화: 발견된 토큰을 모든 저장소에 저장
+      if (accessToken) {
+        if (!cookieAccessToken) {
+          console.log('[클라이언트] 쿠키에 토큰 저장');
+          document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+          
+          if (localRefreshToken) {
+            document.cookie = `sb-refresh-token=${localRefreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+          }
+        }
         
-        // Supabase 세션 확인
-        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!localAccessToken) {
+          console.log('[클라이언트] localStorage에 토큰 저장');
+          localStorage.setItem('sb-access-token', accessToken);
+          if (localRefreshToken) {
+            localStorage.setItem('sb-refresh-token', localRefreshToken);
+          }
+        }
         
-        if (error || !session) {
-          console.log('[클라이언트] Supabase 세션 없음, 로그인 페이지로 이동');
+        if (!sessionAccessToken) {
+          console.log('[클라이언트] sessionStorage에 토큰 저장');
+          sessionStorage.setItem('sb-access-token', accessToken);
+          if (localRefreshToken) {
+            sessionStorage.setItem('sb-refresh-token', localRefreshToken);
+          }
+        }
+      }
+      
+      // Supabase 세션 설정 (토큰이 있지만 세션이 없는 경우 대비)
+      try {
+        const { data: sessionCheck } = await supabase.auth.getSession();
+        if (!sessionCheck.session && accessToken) {
+          console.log('[클라이언트] Supabase 세션 없음, 토큰으로 세션 설정 시도');
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: localRefreshToken || ''
+          });
+        }
+      } catch (e) {
+        console.error('[클라이언트] 세션 설정 오류:', e);
+      }
+      
+      // 사용자 정보 확인
+      console.log('[클라이언트] [3단계] 사용자 정보 확인');
+      const { data: { user: userInfo }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userInfo) {
+        console.log('[클라이언트] 사용자 정보 확인 실패:', userError?.message || '사용자 없음');
+        console.log('[클라이언트] 토큰으로 직접 사용자 정보 확인 시도');
+        
+        // 직접 토큰으로 사용자 정보 확인
+        try {
+          const { data: tokenUserData, error: tokenUserError } = await supabase.auth.getUser(accessToken);
+          
+          if (tokenUserError || !tokenUserData?.user) {
+            console.log('[클라이언트] 토큰으로 사용자 확인 실패:', tokenUserError?.message || '사용자 없음');
+            
+            // 리프레시 토큰으로 세션 갱신 시도
+            if (localRefreshToken) {
+              console.log('[클라이언트] 리프레시 토큰으로 세션 갱신 시도');
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                refresh_token: localRefreshToken
+              });
+              
+              if (!refreshError && refreshData?.session && refreshData?.user) {
+                console.log('[클라이언트] 세션 갱신 성공, 사용자:', refreshData.user.email);
+                
+                // 새로운 토큰 저장
+                localStorage.setItem('sb-access-token', refreshData.session.access_token);
+                localStorage.setItem('sb-refresh-token', refreshData.session.refresh_token);
+                sessionStorage.setItem('sb-access-token', refreshData.session.access_token);
+                sessionStorage.setItem('sb-refresh-token', refreshData.session.refresh_token);
+                
+                document.cookie = `sb-access-token=${refreshData.session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+                document.cookie = `sb-refresh-token=${refreshData.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+                
+                if (mounted) {
+                  setUser(refreshData.user);
+                  setIsAuthenticated(true);
+                  setIsLoading(false);
+                  
+                  // 인증 상태 저장
+                  localStorage.setItem('isAuthenticated', 'true');
+                  localStorage.setItem('lastLoginTime', Date.now().toString());
+                  sessionStorage.setItem('isAuthenticated', 'true');
+                }
+                return true;
+              } else {
+                console.log('[클라이언트] 세션 갱신 실패:', refreshError?.message);
+                if (mounted) {
+                  redirectToLogin();
+                }
+                return false;
+              }
+            } else {
+              // 리프레시 토큰도 없으면 로그인 페이지로
+              if (mounted) {
+                redirectToLogin();
+              }
+              return false;
+            }
+          } else {
+            // 토큰으로 사용자 확인 성공
+            console.log('[클라이언트] 토큰으로 사용자 확인 성공:', tokenUserData.user.email);
+            if (mounted) {
+              setUser(tokenUserData.user);
+              setIsAuthenticated(true);
+              setIsLoading(false);
+              
+              // 인증 상태 저장
+              localStorage.setItem('isAuthenticated', 'true');
+              localStorage.setItem('lastLoginTime', Date.now().toString());
+              sessionStorage.setItem('isAuthenticated', 'true');
+            }
+            return true;
+          }
+        } catch (e) {
+          console.error('[클라이언트] 토큰 검증 오류:', e);
           if (mounted) {
             redirectToLogin();
           }
           return false;
-        } else {
-          // 세션은 있지만 로컬 스토리지에 없는 경우 로컬 스토리지에 저장
-          console.log('[클라이언트] Supabase 세션 있음, 로컬 스토리지에 저장');
-          localStorage.setItem('sb-access-token', session.access_token);
-          localStorage.setItem('sb-refresh-token', session.refresh_token);
-          localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('lastLoginTime', Date.now().toString());
-          
-          if (mounted) {
-            setUser(session.user);
-            setIsAuthenticated(true);
-            setIsLoading(false);
-          }
-          return true;
         }
       }
-    } catch (e) {
-      console.error('[클라이언트] 세션 검증 오류:', e);
+      
+      // 사용자 정보 확인 성공
+      console.log('[클라이언트] [4단계] 인증 성공 - 사용자:', userInfo?.email || 'unknown');
+      
+      // 최신 세션 정보 가져와서 저장소 업데이트
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        // 모든 저장소에 토큰 업데이트
+        localStorage.setItem('sb-access-token', sessionData.session.access_token);
+        localStorage.setItem('sb-refresh-token', sessionData.session.refresh_token);
+        sessionStorage.setItem('sb-access-token', sessionData.session.access_token);
+        sessionStorage.setItem('sb-refresh-token', sessionData.session.refresh_token);
+      }
+      
+      if (mounted) {
+        setUser(userInfo);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        
+        // 인증 상태 저장
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('lastLoginTime', Date.now().toString());
+        sessionStorage.setItem('isAuthenticated', 'true');
+      }
+      return true;
+    } catch (error) {
+      console.error('[클라이언트] 세션 확인 오류:', error);
       if (mounted) {
         redirectToLogin();
       }
       return false;
+    } finally {
+      if (mounted) {
+        setIsLoading(false);
+      }
     }
   };
 
-  // 주기적 세션 확인
+  // 초기 세션 확인
   useEffect(() => {
     let mounted = true;
-    
-    // 토큰 만료 시간을 계산하여 적절한 체크 주기 설정
-    const calculateNextCheck = () => {
-      try {
-        const accessToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('sb-access-token='))
-          ?.split('=')[1];
-        
-        if (accessToken) {
-          const tokenParts = accessToken.split('.');
-          const payload = JSON.parse(atob(tokenParts[1]));
-          const expiryTime = payload.exp * 1000;
-          const currentTime = Date.now();
-          const timeToExpiry = expiryTime - currentTime;
-          
-          // 만료 10분 전 또는 최소 5분마다 체크
-          // 단, 만료 시간이 10분 이하로 남았다면 1분마다 체크
-          if (timeToExpiry <= 600000) { // 10분 이하
-            return 60000; // 1분
-          }
-          return Math.min(timeToExpiry - 600000, 300000); // 만료 10분 전 또는 5분
-        }
-      } catch (e) {
-        console.error('[클라이언트] 토큰 체크 주기 계산 오류:', e);
-      }
-      
-      return 300000; // 기본값 5분
-    };
-    
-    // 초기 세션 확인
     verifySession(mounted);
-    
-    // 동적 인터벌 설정
-    const setupNextCheck = () => {
-      const checkInterval = calculateNextCheck();
-      console.log('[클라이언트] 다음 세션 체크까지:', Math.floor(checkInterval / 1000 / 60), '분');
-      
-      return setTimeout(() => {
-        if (mounted) {
-          verifySession(mounted);
-          timeoutId = setupNextCheck(); // 재귀적으로 다음 체크 설정
-        }
-      }, checkInterval);
-    };
-    
-    let timeoutId = setupNextCheck();
-    
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // 주기적 세션 확인 (1분마다)
+  useEffect(() => {
+    let mounted = true;
+    const intervalId = setInterval(() => {
+      verifySession(mounted);
+    }, 60 * 1000); // 1분
+
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
     };
   }, [locale, router]);
 

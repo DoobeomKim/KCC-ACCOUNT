@@ -216,6 +216,7 @@
         "label": "Transportmittel",
         "placeholder": "Transportmittel auswählen",
         "flight": "Flug",
+        "train": "Zug",
         "taxi": "Taxi",
         "fuel": "Kraftstoff",
         "rental": "Mietwagen",

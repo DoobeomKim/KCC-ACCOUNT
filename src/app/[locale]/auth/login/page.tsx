@@ -36,6 +36,14 @@ export default function LoginPage() {
     const checkAuth = async () => {
       try {
         console.log('[클라이언트] [2단계] 기존 세션 확인');
+        // 로컬 스토리지에서 인증 상태 확인
+        const isAuth = localStorage.getItem('isAuthenticated');
+        if (isAuth === 'true') {
+          console.log('[클라이언트] 로컬 스토리지에 인증 정보 발견, 대시보드로 리디렉션');
+          router.replace(`/${locale}/dashboard`);
+          return;
+        }
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         // 세션 오류 처리
@@ -56,21 +64,34 @@ export default function LoginPage() {
         
         if (session?.user?.aud === 'authenticated' && session?.access_token) {
           console.log('[클라이언트] 유효한 세션 발견, 사용자 정보 확인');
-          // 사용자 정보 확인
-          const { data: { user }, error } = await supabase.auth.getUser(session.access_token)
           
-          if (!error && user) {
-            console.log('[클라이언트] [4단계] 인증 성공 - 이미 로그인됨, 대시보드로 리디렉션');
-            router.replace(`/${locale}/dashboard`)
-            return
-          } else {
-            console.log('[클라이언트] 사용자 정보 확인 실패:', error?.message);
+          // 세션이 존재하면 로컬 스토리지에 인증 상태 저장
+          localStorage.setItem('sb-access-token', session.access_token);
+          localStorage.setItem('sb-refresh-token', session.refresh_token);
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('lastLoginTime', Date.now().toString());
+          
+          // 사용자 정보 확인
+          try {
+            const { data: { user }, error } = await supabase.auth.getUser(session.access_token)
             
-            // 토큰 관련 오류인 경우 세션 무효화
-            if (error?.message.includes('token') || error?.message.includes('expired')) {
-              console.log('[클라이언트] 토큰 만료 감지, 세션 무효화 수행');
-              await invalidateExpiredSession();
+            if (!error && user) {
+              console.log('[클라이언트] [4단계] 인증 성공 - 이미 로그인됨, 대시보드로 리디렉션');
+              router.replace(`/${locale}/dashboard`)
+              return
+            } else {
+              console.log('[클라이언트] 사용자 정보 확인 실패:', error?.message);
+              localStorage.removeItem('isAuthenticated');
+              
+              // 토큰 관련 오류인 경우 세션 무효화
+              if (error?.message.includes('token') || error?.message.includes('expired')) {
+                console.log('[클라이언트] 토큰 만료 감지, 세션 무효화 수행');
+                await invalidateExpiredSession();
+              }
             }
+          } catch (userError) {
+            console.error('[클라이언트] 사용자 정보 확인 중 예외 발생:', userError);
+            localStorage.removeItem('isAuthenticated');
           }
         }
         
@@ -84,6 +105,7 @@ export default function LoginPage() {
           await invalidateExpiredSession();
         }
         
+        localStorage.removeItem('isAuthenticated');
         setIsCheckingSession(false)
       }
     }
@@ -135,12 +157,17 @@ export default function LoginPage() {
       
       // 세션 정보 저장
       try {
-        // 세션 토큰을 localStorage에 저장 (쿠키는 Supabase가 자동으로 설정)
+        // 세션 토큰을 localStorage에 저장
         localStorage.setItem('sb-access-token', data.session.access_token);
         localStorage.setItem('sb-refresh-token', data.session.refresh_token);
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('lastLoginTime', Date.now().toString());
         localStorage.removeItem('auth_redirect_in_progress');
+        
+        // 세션 스토리지에도 저장
+        sessionStorage.setItem('sb-access-token', data.session.access_token);
+        sessionStorage.setItem('sb-refresh-token', data.session.refresh_token);
+        sessionStorage.setItem('isAuthenticated', 'true');
         
         // 쿠키 설정 확인 및 필요 시 추가 설정
         const cookies = document.cookie;

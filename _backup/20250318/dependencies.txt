@@ -1,0 +1,162 @@
+account@0.1.0 /Volumes/EULS SSD/BRIDGEMAKERS/account
+├── @eslint/eslintrc@3.3.0
+├── @radix-ui/react-dialog@1.1.6
+├── @radix-ui/react-label@2.1.2
+├── @radix-ui/react-popover@1.1.6
+├── @radix-ui/react-radio-group@1.2.3
+├── @radix-ui/react-select@2.1.6
+├── @radix-ui/react-slot@1.1.2
+├── @radix-ui/react-switch@1.1.3
+├── @radix-ui/react-tabs@1.1.3
+├── @supabase/auth-helpers-nextjs@0.10.0
+├── @supabase/ssr@0.5.2
+├── @supabase/supabase-js@2.49.1
+├── @tailwindcss/postcss@4.0.14
+├── @types/node@20.17.24
+├── @types/react-dom@19.0.4
+├── @types/react@19.0.10
+├── @types/xlsx@0.0.35
+├── class-variance-authority@0.7.1
+├── clsx@2.1.1
+├── cmdk@1.1.1
+├── date-fns@2.30.0
+├── eslint-config-next@15.2.2
+├── eslint@9.22.0
+├── html2pdf.js@0.10.3
+├── lucide-react@0.479.0
+├── next-intl@4.0.2
+├── next@15.2.2
+├── react-day-picker@8.10.1
+├── react-dom@18.2.0
+├── react@18.2.0
+├── sonner@2.0.1
+├── tailwind-merge@3.0.2
+├── tailwindcss-animate@1.0.7
+├── tailwindcss@4.0.14
+├── typescript@5.8.2
+└── xlsx@0.18.5
+
+account@0.1.0 /Volumes/EULS SSD/BRIDGEMAKERS/account
+├─┬ @radix-ui/react-dialog@1.1.6
+│ ├─┬ @radix-ui/react-compose-refs@1.1.1
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-context@1.1.1
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-dismissable-layer@1.1.5
+│ │ ├─┬ @radix-ui/react-use-escape-keydown@1.1.0
+│ │ │ └── react@18.2.0 deduped
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-focus-guards@1.1.1
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-focus-scope@1.1.2
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-id@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-portal@1.1.4
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-presence@1.1.2
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-primitive@2.0.2
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-use-controllable-state@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├── react-dom@18.2.0 deduped
+│ ├─┬ react-remove-scroll@2.6.3
+│ │ ├─┬ react-remove-scroll-bar@2.3.8
+│ │ │ └── react@18.2.0 deduped
+│ │ ├─┬ react-style-singleton@2.2.3
+│ │ │ └── react@18.2.0 deduped
+│ │ ├── react@18.2.0 deduped
+│ │ ├─┬ use-callback-ref@1.3.3
+│ │ │ └── react@18.2.0 deduped
+│ │ └─┬ use-sidecar@1.1.3
+│ │   └── react@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-label@2.1.2
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-popover@1.1.6
+│ ├─┬ @radix-ui/react-popper@1.2.2
+│ │ ├─┬ @floating-ui/react-dom@2.1.2
+│ │ │ ├── react-dom@18.2.0 deduped
+│ │ │ └── react@18.2.0 deduped
+│ │ ├─┬ @radix-ui/react-arrow@1.1.2
+│ │ │ ├── react-dom@18.2.0 deduped
+│ │ │ └── react@18.2.0 deduped
+│ │ ├─┬ @radix-ui/react-use-rect@1.1.0
+│ │ │ └── react@18.2.0 deduped
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-radio-group@1.2.3
+│ ├─┬ @radix-ui/react-direction@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-roving-focus@1.1.2
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-use-previous@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-use-size@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-select@2.1.6
+│ ├─┬ @radix-ui/react-collection@1.1.2
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-use-callback-ref@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-use-layout-effect@1.1.0
+│ │ └── react@18.2.0 deduped
+│ ├─┬ @radix-ui/react-visually-hidden@1.1.2
+│ │ ├── react-dom@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-slot@1.1.2
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-switch@1.1.3
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @radix-ui/react-tabs@1.1.3
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @supabase/auth-helpers-nextjs@0.10.0
+│ ├─┬ @supabase/auth-helpers-shared@0.7.0
+│ │ └── @supabase/supabase-js@2.49.1 deduped
+│ └── @supabase/supabase-js@2.49.1 deduped
+├─┬ @supabase/ssr@0.5.2
+│ └── @supabase/supabase-js@2.49.1 deduped
+├── @supabase/supabase-js@2.49.1
+├─┬ cmdk@1.1.1
+│ ├── react-dom@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ lucide-react@0.479.0
+│ └── react@18.2.0 deduped
+├─┬ next-intl@4.0.2
+│ ├── next@15.2.2 deduped
+│ ├── react@18.2.0 deduped
+│ └─┬ use-intl@4.0.2
+│   └── react@18.2.0 deduped
+├─┬ next@15.2.2
+│ ├── react-dom@18.2.0 deduped
+│ ├── react@18.2.0 deduped
+│ └─┬ styled-jsx@5.1.6
+│   └── react@18.2.0 deduped
+├─┬ react-day-picker@8.10.1
+│ └── react@18.2.0 deduped
+├─┬ react-dom@18.2.0
+│ └── react@18.2.0 deduped
+├── react@18.2.0
+└─┬ sonner@2.0.1
+  ├── react-dom@18.2.0 deduped
+  └── react@18.2.0 deduped
+
+Node.js 버전: v22.14.0
+NPM 버전: 10.9.2

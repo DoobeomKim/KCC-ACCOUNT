@@ -61,6 +61,7 @@ import { AccommodationCalendar } from '@/components/AccommodationCalendar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import MealAllowanceInfo from '@/components/MealAllowanceInfo'
+import CountrySelector from "@/components/CountrySelector"
 
 // ExpenseForm 인터페이스를 export로 변경
 export interface ExpenseForm {
@@ -69,14 +70,7 @@ export interface ExpenseForm {
   startTime: string
   endDate: Date | undefined
   endTime: string
-  visits: {
-    date: Date | undefined
-    companyName: string
-    city: string
-    description: string
-    isExpanded: boolean
-    datePickerOpen: boolean
-  }[]
+  visits: ExpenseFormVisit[]
   purpose: string
   projectName: string
   projectNumber: string
@@ -100,56 +94,10 @@ export interface ExpenseForm {
     arrivalCountry?: string
     arrivalCity?: string
   }[]
-  accommodations: {
-    startDate: Date | undefined
-    endDate: Date | undefined
-    type: 'hotel' | 'private' | undefined
-    country: string
-    hotelName: string
-    paidBy: 'company' | 'personal' | undefined
-    breakfastDates: Date[]
-    cityTax: string
-    vat: string
-    totalAmount: string
-    isExpanded?: boolean
-    datePickerOpen?: boolean
-  }[]
-  transportation: {
-    date: Date | undefined
-    type: 'flight' | 'taxi' | 'fuel' | 'rental' | 'mileage' | undefined
-    otherType?: string
-    licensePlate?: string
-    country: string
-    companyName: string
-    totalAmount: string  // 총액(세금 포함)
-    paidBy: 'company' | 'personal' | undefined
-    vat: string
-    isExpanded?: boolean
-    datePickerOpen?: boolean
-    mileage?: string
-  }[]
-  meals: {
-    date: Date | undefined
-    country: string
-    companyName: string
-    amount: string
-    paidBy: 'company' | 'personal' | undefined
-    vat: string
-    isExpanded?: boolean
-    datePickerOpen?: boolean
-  }[]
-  entertainment: {
-    date: Date | undefined
-    type: 'breakfast' | 'lunch' | 'dinner' | 'coffee' | undefined
-    otherType?: string
-    country: string
-    companyName: string
-    amount: string
-    paidBy: 'company' | 'personal' | undefined
-    vat: string
-    isExpanded?: boolean
-    datePickerOpen?: boolean
-  }[]
+  accommodations: ExpenseFormAccommodation[]
+  transportation: ExpenseFormTransportation[]
+  meals: MealEntry[]
+  entertainment: ExpenseFormEntertainment[]
   startDatePickerOpen?: boolean
   endDatePickerOpen?: boolean
 }
@@ -166,6 +114,69 @@ interface CountryOption {
   type: 'business' | 'simple';  // business: 출장비용관리 연동, simple: 독일/기타
 }
 
+interface ExpenseFormTransportation {
+  date: Date | undefined
+  type: 'flight' | 'train' | 'taxi' | 'fuel' | 'rental' | 'mileage' | undefined
+  otherType?: string
+  licensePlate?: string
+  country: string
+  companyName: string
+  paidBy: 'company' | 'personal' | undefined
+  vat: string
+  totalAmount: string
+  mileage?: string
+  isExpanded: boolean
+  datePickerOpen: boolean
+}
+
+interface ExpenseFormAccommodation {
+    startDate: Date | undefined
+    endDate: Date | undefined
+    type: 'hotel' | 'private' | undefined
+    country: string
+    hotelName: string
+    paidBy: 'company' | 'personal' | undefined
+    breakfastDates: Date[]
+    cityTax: string
+    vat: string
+    totalAmount: string
+    isExpanded?: boolean
+    datePickerOpen?: boolean
+}
+
+interface ExpenseFormEntertainment {
+    date: Date | undefined
+  type: 'breakfast' | 'lunch' | 'dinner' | 'coffee' | undefined
+    otherType?: string
+    country: string
+    companyName: string
+    amount: string
+    paidBy: 'company' | 'personal' | undefined
+    vat: string
+    isExpanded?: boolean
+    datePickerOpen?: boolean
+}
+
+interface ExpenseFormVisit {
+    date: Date | undefined
+    companyName: string
+  city: string
+  description: string
+  isExpanded: boolean
+  datePickerOpen: boolean
+}
+
+interface MealEntry {
+    date: Date | undefined
+    country: string
+    companyName: string
+    amount: string
+    paidBy: 'company' | 'personal' | undefined
+    vat: string
+    isExpanded?: boolean
+    datePickerOpen?: boolean
+}
+
 // 필수 라벨 컴포넌트
 const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
   <div className="flex items-center gap-1">
@@ -179,7 +190,6 @@ const calculateExpenseSummary = (formData: ExpenseForm) => {
   // 초기값 설정
   const summary = {
     transportation: { company: 0, personal: 0 },
-    mileageAllowance: { company: 0, personal: 0 }, // 주행거리 수당 추가
     entertainment: { company: 0, personal: 0 },
     accommodation: { company: 0, personal: 0 },
     total: { company: 0, personal: 0 }
@@ -189,21 +199,10 @@ const calculateExpenseSummary = (formData: ExpenseForm) => {
   formData.transportation.forEach(item => {
     if (item.totalAmount) {
       const amount = parseFloat(item.totalAmount) || 0;
-      
-      // 주행거리 수당은 별도로 계산
-      if (item.type === 'mileage') {
-        if (item.paidBy === 'company') {
-          summary.mileageAllowance.company += amount;
-        } else if (item.paidBy === 'personal') {
-          summary.mileageAllowance.personal += amount;
-        }
-      } else {
-        // 일반 교통비
-        if (item.paidBy === 'company') {
-          summary.transportation.company += amount;
-        } else if (item.paidBy === 'personal') {
-          summary.transportation.personal += amount;
-        }
+      if (item.paidBy === 'company') {
+        summary.transportation.company += amount;
+      } else if (item.paidBy === 'personal') {
+        summary.transportation.personal += amount;
       }
     }
   });
@@ -233,8 +232,8 @@ const calculateExpenseSummary = (formData: ExpenseForm) => {
   });
 
   // 총 합계 계산
-  summary.total.company = summary.transportation.company + summary.mileageAllowance.company + summary.entertainment.company + summary.accommodation.company;
-  summary.total.personal = summary.transportation.personal + summary.mileageAllowance.personal + summary.entertainment.personal + summary.accommodation.personal;
+  summary.total.company = summary.transportation.company + summary.entertainment.company + summary.accommodation.company;
+  summary.total.personal = summary.transportation.personal + summary.entertainment.personal + summary.accommodation.personal;
 
   return summary;
 };
@@ -1502,7 +1501,7 @@ export default function BusinessExpensePage() {
               <Card className="mb-4">
                 <CardContent className="pt-4">
                   <div className="space-y-6">
-                    {/* 식대 지급 질문 */}
+                    {/* 일괄 식비 지급 질문 */}
                     <div className="flex justify-between items-center">
                       <div>
                         <h2 className="text-xl font-semibold">{t("expense.allowance.meal.title")}</h2>
@@ -1521,24 +1520,7 @@ export default function BusinessExpensePage() {
                       </div>
                     </div>
 
-                    {/* 숙박비 지급 질문 */}
-                    <div className="flex justify-between items-center pt-4 border-t">
-                      <div>
-                        <h2 className="text-xl font-semibold">{t("expense.allowance.accommodation.title")}</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {t("expense.allowance.accommodation.description")}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {formData.accommodationOption ? t("expense.allowance.accommodation.willBePaid") : t("expense.allowance.accommodation.willNotBePaid")}
-                        </span>
-                        <Switch
-                          checked={formData.accommodationOption}
-                          onCheckedChange={(checked) => updateFormData('accommodationOption', checked)}
-                        />
-                      </div>
-                    </div>
+                    {/* 숙박비 지급 질문 항목 제거 */}
                   </div>
                 </CardContent>
               </Card>
@@ -1575,6 +1557,7 @@ export default function BusinessExpensePage() {
                                     {item.type && (
                                       <span>
                                         {item.type === 'flight' ? t("expense.transportation.type.flight") : 
+                                         item.type === 'train' ? t("expense.transportation.type.train") : 
                                          item.type === 'taxi' ? t("expense.transportation.type.taxi") : 
                                          item.type === 'fuel' ? t("expense.transportation.type.fuel") : 
                                          item.type === 'rental' ? t("expense.transportation.type.rental") : 
@@ -1654,133 +1637,134 @@ export default function BusinessExpensePage() {
                                       />
                                     </PopoverContent>
                                   </Popover>
-                                </div>
+                              </div>
                                 <div className="space-y-2">
                                   <Label>{t("expense.transportation.type.label")}</Label>
-                                  <Select
-                                    value={item.type}
-                                    onValueChange={(value) => updateTransportation(index, 'type', value)}
-                                  >
+                                <Select
+                                  value={item.type}
+                                  onValueChange={(value) => updateTransportation(index, 'type', value)}
+                                >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder={t("expense.transportation.type.placeholder")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="flight">{t("expense.transportation.type.flight")}</SelectItem>
-                                      <SelectItem value="taxi">{t("expense.transportation.type.taxi")}</SelectItem>
-                                      <SelectItem value="fuel">{t("expense.transportation.type.fuel")}</SelectItem>
-                                      <SelectItem value="rental">{t("expense.transportation.type.rental")}</SelectItem>
+                                    <SelectValue placeholder={t("expense.transportation.type.placeholder")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="flight">{t("expense.transportation.type.flight")}</SelectItem>
+                                      <SelectItem value="train">{t("expense.transportation.type.train")}</SelectItem>
+                                    <SelectItem value="taxi">{t("expense.transportation.type.taxi")}</SelectItem>
+                                    <SelectItem value="fuel">{t("expense.transportation.type.fuel")}</SelectItem>
+                                    <SelectItem value="rental">{t("expense.transportation.type.rental")}</SelectItem>
                                       <SelectItem value="mileage">{t("expense.transportation.type.km_pauschale")}</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                                  </SelectContent>
+                                </Select>
                               </div>
-                              <div className="space-y-2">
-                                <Label>{t("expense.transportation.country.label")}</Label>
+                                  </div>
+                              {item.type !== 'mileage' && (
+                                <>
+                                  <div className="space-y-2">
+                                    <Label>{t("expense.transportation.country.label")}</Label>
                                 <Select
                                   value={item.country}
                                   onValueChange={(value) => updateTransportation(index, 'country', value)}
                                 >
-                                  <SelectTrigger className="w-full">
+                                    <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t("expense.transportation.country.placeholder")} />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {simpleCountryOptions.map((option) => (
-                                      <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                      </SelectItem>
-                                    ))}
+                                        {simpleCountryOptions.map((option) => (
+                                          <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                          </SelectItem>
+                                        ))}
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <div className="space-y-2">
-                                <Label>{t("expense.transportation.companyName.label")}</Label>
+                                  <div className="space-y-2">
+                                    <Label>{t("expense.transportation.companyName.label")}</Label>
                                 <Input
-                                  placeholder={t("expense.transportation.companyName.placeholder")}
+                                      placeholder={t("expense.transportation.companyName.placeholder")}
                                   value={item.companyName}
                                   onChange={(e) => updateTransportation(index, 'companyName', e.target.value)}
                                 />
-                              </div>
-
-                              {item.type === 'mileage' ? (
-                                <>
-                                  {/* 주행거리 수당 관련 필드 */}
-                                  <div className="space-y-2">
-                                    <Label>{t("expense.transportation.mileage.label")}</Label>
-                                    <div className="relative">
-                                      <Input
-                                        value={item.mileage}
-                                        onChange={(e) => updateTransportation(index, 'mileage', e.target.value)}
-                                        placeholder={t("expense.transportation.mileage.placeholder")}
-                                        className="pr-8"
-                                      />
-                                      <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
-                                        <span className="text-muted-foreground">km</span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* 차량 번호판 */}
-                                  <div className="space-y-2">
-                                    <Label>{t("expense.transportation.licensePlate.label")}</Label>
-                                    <Input
-                                      placeholder={t("expense.transportation.licensePlate.placeholder")}
-                                      value={item.licensePlate}
-                                      onChange={(e) => updateTransportation(index, 'licensePlate', e.target.value)}
-                                    />
                                   </div>
                                 </>
+                              )}
+
+                              {item.type === 'mileage' ? (
+                                <div className="space-y-2">
+                                  <Label>{t("expense.transportation.mileage.label")}</Label>
+                                  <div className="relative">
+                                    <Input
+                                      type="text"
+                                      inputMode="decimal"
+                                      pattern="[0-9]*\.?[0-9]*"
+                                      placeholder={t("expense.transportation.mileage.placeholder")}
+                                      value={item.mileage || ''}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        // 숫자와 소수점만 허용
+                                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                          updateTransportation(index, 'mileage', value);
+                                        }
+                                      }}
+                                      className="pr-12"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
+                                      KM
+                                    </div>
+                                  </div>
+                                </div>
                               ) : (
                                 <>
                                   {/* 결제자와 부가세를 한 줄에 배치 */}
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* 결제자 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* 결제자 */}
                                     <div className="space-y-2">
                                       <Label>{t("expense.paidBy.label")}</Label>
-                                      <Select
-                                        value={item.paidBy}
-                                        onValueChange={(value) => updateTransportation(index, 'paidBy', value as 'company' | 'personal')}
-                                      >
-                                        <SelectTrigger className="w-full">
-                                          <SelectValue placeholder={t("expense.paidBy.placeholder")} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
-                                          <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
+                                <Select
+                                  value={item.paidBy}
+                                      onValueChange={(value) => updateTransportation(index, 'paidBy', value as 'company' | 'personal')}
+                                >
+                                      <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t("expense.paidBy.placeholder")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
+                                    <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
-                                    {/* 부가세 */}
+                              {/* 부가세 */}
                                     <div className="space-y-2">
                                       <Label>{t("expense.transportation.vat.label")}</Label>
-                                      <div className="relative">
-                                        <Input
-                                          value={item.vat}
-                                          onChange={(e) => updateTransportation(index, 'vat', e.target.value)}
-                                          placeholder={t("expense.transportation.vat.placeholder")}
+                                <div className="relative">
+                                  <Input
+                                    value={item.vat}
+                                    onChange={(e) => updateTransportation(index, 'vat', e.target.value)}
+                                        placeholder={t("expense.transportation.vat.placeholder")}
                                           className="pr-8"
-                                        />
+                                  />
                                         <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
                                           <span className="text-muted-foreground">€</span>
-                                        </div>
-                                      </div>
-                                    </div>
+                                </div>
+                              </div>
+                                </div>
                                   </div>
 
                                   {/* 총액 */}
                                   <div className="space-y-2">
                                     <Label>{t("expense.transportation.totalAmount.label")}</Label>
-                                    <div className="relative">
-                                      <Input
+                                <div className="relative">
+                                  <Input
                                         value={item.totalAmount}
                                         onChange={(e) => updateTransportation(index, 'totalAmount', e.target.value)}
                                         placeholder={t("expense.transportation.totalAmount.placeholder")}
                                         className="pr-8"
-                                      />
+                                  />
                                       <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
                                         <span className="text-muted-foreground">€</span>
-                                      </div>
-                                    </div>
+                                </div>
+                              </div>
                                   </div>
                                 </>
                               )}
@@ -1903,23 +1887,23 @@ export default function BusinessExpensePage() {
                                       />
                                     </PopoverContent>
                                   </Popover>
-                                </div>
+                              </div>
                                 <div className="space-y-2">
                                   <Label>{t("expense.entertainment.type.label")}</Label>
-                                  <Select
-                                    value={item.type}
-                                    onValueChange={(value) => updateEntertainment(index, 'type', value)}
-                                  >
+                                <Select
+                                  value={item.type}
+                                  onValueChange={(value) => updateEntertainment(index, 'type', value)}
+                                >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder={t("expense.entertainment.type.placeholder")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="breakfast">{t("expense.entertainment.type.breakfast")}</SelectItem>
-                                      <SelectItem value="lunch">{t("expense.entertainment.type.lunch")}</SelectItem>
-                                      <SelectItem value="dinner">{t("expense.entertainment.type.dinner")}</SelectItem>
-                                      <SelectItem value="coffee">{t("expense.entertainment.type.coffee")}</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                    <SelectValue placeholder={t("expense.entertainment.type.placeholder")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="breakfast">{t("expense.entertainment.type.breakfast")}</SelectItem>
+                                    <SelectItem value="lunch">{t("expense.entertainment.type.lunch")}</SelectItem>
+                                    <SelectItem value="dinner">{t("expense.entertainment.type.dinner")}</SelectItem>
+                                    <SelectItem value="coffee">{t("expense.entertainment.type.coffee")}</SelectItem>
+                                  </SelectContent>
+                                </Select>
                                 </div>
                               </div>
 
@@ -1929,7 +1913,7 @@ export default function BusinessExpensePage() {
                                   value={item.country}
                                   onValueChange={(value) => updateEntertainment(index, 'country', value)}
                                 >
-                                  <SelectTrigger className="w-full">
+                                    <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t("expense.entertainment.country.placeholder")} />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1953,33 +1937,33 @@ export default function BusinessExpensePage() {
 
                               {/* 결제자와 부가세를 한 줄에 배치 */}
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* 결제자 */}
+                              {/* 결제자 */}
                                 <div className="space-y-2">
                                   <Label>{t("expense.paidBy.label")}</Label>
-                                  <Select
-                                    value={item.paidBy}
+                                <Select
+                                  value={item.paidBy}
                                     onValueChange={(value) => updateEntertainment(index, 'paidBy', value as 'company' | 'personal')}
-                                  >
+                                >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder={t("expense.paidBy.placeholder")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
-                                      <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                                    <SelectValue placeholder={t("expense.paidBy.placeholder")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
+                                    <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
-                                {/* 부가세 */}
+                              {/* 부가세 */}
                                 <div className="space-y-2">
                                   <Label>{t("expense.entertainment.vat.label")}</Label>
-                                  <div className="relative">
-                                    <Input
-                                      value={item.vat}
-                                      onChange={(e) => updateEntertainment(index, 'vat', e.target.value)}
+                                <div className="relative">
+                                  <Input
+                                    value={item.vat}
+                                    onChange={(e) => updateEntertainment(index, 'vat', e.target.value)}
                                       placeholder={t("expense.entertainment.vat.placeholder")}
                                       className="pr-8"
-                                    />
+                                  />
                                     <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
                                       <span className="text-muted-foreground">€</span>
                                     </div>
@@ -1994,7 +1978,7 @@ export default function BusinessExpensePage() {
                                   <Input
                                     value={item.amount}
                                     onChange={(e) => updateEntertainment(index, 'amount', e.target.value)}
-                                    placeholder={t("expense.entertainment.totalAmount.placeholder")}
+                                      placeholder={t("expense.entertainment.totalAmount.placeholder")}
                                     className="pr-8"
                                   />
                                   <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
@@ -2191,23 +2175,23 @@ export default function BusinessExpensePage() {
 
                                 {/* 결제자 선택 필드 - 호텔인 경우에만 표시 */}
                                 {acc.type === 'hotel' && (
-                                  <div className="space-y-2">
-                                    <RequiredLabel>
-                                      <Label>{t("expense.paidBy.label")}</Label>
-                                    </RequiredLabel>
-                                    <Select
-                                      value={acc.paidBy}
-                                      onValueChange={(value) => updateAccommodation(index, 'paidBy', value)}
-                                    >
-                                      <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={t("expense.paidBy.placeholder")} />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
-                                        <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
+                                <div className="space-y-2">
+                                  <RequiredLabel>
+                                    <Label>{t("expense.paidBy.label")}</Label>
+                                  </RequiredLabel>
+                                  <Select
+                                    value={acc.paidBy}
+                                    onValueChange={(value) => updateAccommodation(index, 'paidBy', value)}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder={t("expense.paidBy.placeholder")} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
+                                      <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                                 )}
                               </div>
 
@@ -2215,48 +2199,29 @@ export default function BusinessExpensePage() {
                                 <RequiredLabel>
                                   <Label>{t("expense.accommodation.country.label")}</Label>
                                 </RequiredLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      className="w-full justify-between"
-                                    >
-                                      {acc.country
-                                        ? businessCountryOptions.find(
-                                            (option) => option.value === acc.country
-                                          )?.label || acc.country
-                                        : t("expense.accommodation.country.placeholder")}
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-full p-0">
-                                    <Command>
-                                      <CommandInput placeholder={t("expense.accommodation.country.placeholder")} />
-                                      <CommandEmpty>국가를 찾을 수 없습니다</CommandEmpty>
-                                      <CommandGroup>
-                                        {businessCountryOptions.map((option) => (
-                                          <CommandItem
-                                            key={option.value}
-                                            value={option.value}
-                                            onSelect={() => {
-                                              updateAccommodation(index, 'country', option.value);
-                                              setCountrySearch('');
-                                            }}
-                                          >
-                                            <Check
-                                              className={cn(
-                                                "mr-2 h-4 w-4",
-                                                acc.country === option.value ? "opacity-100" : "opacity-0"
-                                              )}
-                                            />
-                                            {option.label}
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
+                                {acc.type === 'hotel' ? (
+                                  // 호텔인 경우 - 간단한 국가 선택
+                                  <Select
+                                    value={acc.country}
+                                    onValueChange={(value) => updateAccommodation(index, 'country', value)}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder={t("expense.accommodation.country.placeholder")} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="DE">{t("expense.transportation.country.germany")}</SelectItem>
+                                      <SelectItem value="OTHER">{t("expense.transportation.country.other")}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  // 개인숙소인 경우 - CountrySelector 사용
+                                  <CountrySelector
+                                    value={acc.country}
+                                    onChange={(value) => updateAccommodation(index, 'country', value)}
+                                    placeholder={t("expense.accommodation.country.placeholder")}
+                                    mode="database"
+                                  />
+                                )}
                               </div>
 
                               {acc.type === 'hotel' && (
@@ -2273,55 +2238,55 @@ export default function BusinessExpensePage() {
                               {/* 숙박비 관련 필드 - 호텔인 경우에만 표시 */}
                               {acc.type === 'hotel' && (
                                 <>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label>{t("expense.accommodation.cityTax.label")}</Label>
-                                      <div className="relative">
-                                        <Input
-                                          type="number"
-                                          placeholder={t("expense.accommodation.cityTax.placeholder")}
-                                          value={acc.cityTax}
-                                          onChange={(e) => updateAccommodation(index, 'cityTax', e.target.value)}
-                                          className="pr-8"
-                                        />
-                                        <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
-                                          <span className="text-muted-foreground">€</span>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                      <Label>{t("expense.accommodation.vat.label")}</Label>
-                                      <div className="relative">
-                                        <Input
-                                          type="number"
-                                          placeholder={t("expense.accommodation.vat.placeholder")}
-                                          value={acc.vat}
-                                          onChange={(e) => updateAccommodation(index, 'vat', e.target.value)}
-                                          className="pr-8"
-                                        />
-                                        <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
-                                          <span className="text-muted-foreground">€</span>
-                                        </div>
-                                      </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>{t("expense.accommodation.cityTax.label")}</Label>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      placeholder={t("expense.accommodation.cityTax.placeholder")}
+                                      value={acc.cityTax}
+                                      onChange={(e) => updateAccommodation(index, 'cityTax', e.target.value)}
+                                      className="pr-8"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
+                                      <span className="text-muted-foreground">€</span>
                                     </div>
                                   </div>
+                                </div>
 
-                                  <div className="space-y-2">
-                                    <Label>{t("expense.accommodation.totalAmount.label")}</Label>
-                                    <div className="relative">
-                                      <Input
-                                        type="number"
-                                        placeholder={t("expense.accommodation.totalAmount.placeholder")}
-                                        value={acc.totalAmount}
-                                        onChange={(e) => updateAccommodation(index, 'totalAmount', e.target.value)}
-                                        className="pr-8"
-                                      />
-                                      <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
-                                        <span className="text-muted-foreground">€</span>
-                                      </div>
+                                <div className="space-y-2">
+                                  <Label>{t("expense.accommodation.vat.label")}</Label>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      placeholder={t("expense.accommodation.vat.placeholder")}
+                                      value={acc.vat}
+                                      onChange={(e) => updateAccommodation(index, 'vat', e.target.value)}
+                                      className="pr-8"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
+                                      <span className="text-muted-foreground">€</span>
                                     </div>
                                   </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label>{t("expense.accommodation.totalAmount.label")}</Label>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    placeholder={t("expense.accommodation.totalAmount.placeholder")}
+                                    value={acc.totalAmount}
+                                    onChange={(e) => updateAccommodation(index, 'totalAmount', e.target.value)}
+                                    className="pr-8"
+                                  />
+                                  <div className="absolute inset-y-0 right-0 flex items-center p-2 pointer-events-none">
+                                    <span className="text-muted-foreground">€</span>
+                                  </div>
+                                </div>
+                              </div>
                                 </>
                               )}
                             </div>
@@ -2417,21 +2382,6 @@ export default function BusinessExpensePage() {
                           </div>
                         </div>
                         
-                        {/* 주행거리 수당 합계 */}
-                        <div className="flex items-center justify-between border-b pb-2">
-                          <div className="font-medium">주행거리 수당</div>
-                          <div className="flex gap-4">
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">회사:</span>
-                              <span className="font-semibold">{summary.mileageAllowance.company.toFixed(2)}€</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">개인:</span>
-                              <span className="font-semibold">{summary.mileageAllowance.personal.toFixed(2)}€</span>
-                            </div>
-                          </div>
-                        </div>
-                        
                         {/* 접대비 합계 */}
                         <div className="flex items-center justify-between border-b pb-2">
                           <div className="font-medium">접대비 합계</div>
@@ -2483,7 +2433,7 @@ export default function BusinessExpensePage() {
                   })()}
                 </CardContent>
               </Card>
-              
+
               {/* 저장 버튼 */}
               <div className="flex justify-end pt-4">
                 <Button onClick={handleCreateExpense}>
