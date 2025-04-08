@@ -121,10 +121,11 @@
       "noEntertainment": "Keine Bewirtungskosten vorhanden.",
       "noMealAllowance": "Keine Verpflegungspauschale berechnet.",
       "transportationTotal": "Transportkosten gesamt",
-      "accommodationTotal": "Unterkunftskosten gesamt",
+      "accommodationTotal": "Übernachtungskosten gesamt",
       "entertainmentTotal": "Bewirtungskosten gesamt",
-      "mealAllowanceTotal": "Verpflegungspauschale gesamt",
-      "grandTotal": "Gesamtsumme"
+      "miscellaneousTotal": "Sonstige Kosten gesamt",
+      "mealAllowanceTotal": "Verpflegungsmehraufwand gesamt",
+      "grandTotal": "Gesamtkosten"
     },
     "visitInfo": {
       "title": "Besuchsinformationen",
@@ -246,11 +247,11 @@
       },
       "vat": {
         "label": "MwSt.",
-        "placeholder": "0.00"
+        "placeholder": "0,00"
       },
       "totalAmount": {
         "label": "Gesamtbetrag (inkl. Steuer)",
-        "placeholder": "0.00"
+        "placeholder": "0,00"
       },
       "deleteButton": "Löschen"
     },
@@ -287,6 +288,44 @@
       "totalAmount": {
         "label": "Gesamtbetrag (inkl. Steuer)",
         "placeholder": "0.00"
+      },
+      "deleteButton": "Löschen"
+    },
+    "miscellaneous": {
+      "title": "Sonstige Kosten",
+      "addButton": "+ Sonstige Kosten hinzufügen",
+      "item": "Sonstige Kosten #{number}",
+      "noDate": "Kein Datum",
+      "type": {
+        "label": "Typ",
+        "placeholder": "Typ auswählen",
+        "etc1": "Sonstiges 1",
+        "etc2": "Sonstiges 2",
+        "etc3": "Sonstiges 3",
+        "etc4": "Sonstiges 4"
+      },
+      "date": {
+        "label": "Datum",
+        "placeholder": "Datum"
+      },
+      "country": {
+        "label": "Land",
+        "placeholder": "Land auswählen",
+        "germany": "Deutschland",
+        "korea": "Südkorea",
+        "other": "Anderes Land"
+      },
+      "companyName": {
+        "label": "Firmenname",
+        "placeholder": "Firmennamen eingeben"
+      },
+      "vat": {
+        "label": "MwSt.",
+        "placeholder": "0,00"
+      },
+      "totalAmount": {
+        "label": "Gesamtbetrag (inkl. Steuern)",
+        "placeholder": "0,00"
       },
       "deleteButton": "Löschen"
     },
@@ -343,6 +382,74 @@
     "transportationTypeRequired": "Bitte wählen Sie das Transportmittel für Eintrag {index}.",
     "transportationIncomplete": "Transportkosten-Eintrag {index} ist unvollständig.",
     "accommodationIncomplete": "Unterkunftskosten-Eintrag {index} ist unvollständig.",
-    "entertainmentIncomplete": "Bewirtungskosten-Eintrag {index} ist unvollständig."
+    "entertainmentIncomplete": "Die Informationen für Bewirtungskosten {index} sind unvollständig.",
+    "miscellaneousIncomplete": "Die Informationen für Sonstige Kosten {index} sind unvollständig."
+  },
+  "countryAllowances": {
+    "title": "Länderspezifische Reisekosten",
+    "buttons": {
+      "excelDownload": "Excel herunterladen",
+      "excelUpload": "Excel hochladen",
+      "add": "Neu hinzufügen"
+    },
+    "table": {
+      "headers": {
+        "countryCode": "Ländercode",
+        "countryNameDe": "Land (Deutsch)",
+        "countryNameKo": "Land (Koreanisch)",
+        "fullDayAmount": "Tagessatz",
+        "partialDayAmount": "Halber Tagessatz",
+        "accommodationAmount": "Übernachtungspauschale",
+        "actions": "Aktionen"
+      }
+    },
+    "uploadDialog": {
+      "title": "Excel-Datei hochladen",
+      "description": "Laden Sie eine Excel-Datei mit Länderdaten hoch",
+      "selectFile": "Datei auswählen",
+      "noFileSelected": "Keine Datei ausgewählt"
+    },
+    "addDialog": {
+      "title": "Neues Land hinzufügen",
+      "description": "Geben Sie die Reisekostendaten für das neue Land ein"
+    },
+    "form": {
+      "countryCode": {
+        "label": "Ländercode",
+        "placeholder": "DE oder AU-SYD",
+        "description": "Standardländer: 2-stelliger Code (z.B. DE)\nMit Stadtunterscheidung: 2-stellig-3-stellig (z.B. AU-SYD)"
+      },
+      "countryNameDe": {
+        "label": "Land (Deutsch)",
+        "placeholder": "Deutschland"
+      },
+      "countryNameKo": {
+        "label": "Land (Koreanisch)",
+        "placeholder": "독일"
+      },
+      "fullDayAmount": {
+        "label": "Tagessatz (€)",
+        "placeholder": "0,00"
+      },
+      "partialDayAmount": {
+        "label": "Halber Tagessatz (€)",
+        "placeholder": "0,00"
+      },
+      "accommodationAmount": {
+        "label": "Übernachtungspauschale (€)",
+        "placeholder": "0,00"
+      }
+    },
+    "editDialog": {
+      "title": "Land bearbeiten",
+      "description": "Bearbeiten Sie die Reisekostendaten für dieses Land"
+    }
+  },
+  "common": {
+    "buttons": {
+      "cancel": "Abbrechen",
+      "add": "Hinzufügen",
+      "update": "Aktualisieren"
+    }
   }
 } 

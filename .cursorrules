@@ -23,3 +23,170 @@
 
 - TypeScript 타입은 반드시 정의해야 합니다
 - 컴포넌트는 재사용 가능하도록 설계해야 합니다
+
+## Formatting Rules
+
+### Number and Currency Format
+
+- 모든 숫자와 금액은 독일 표준 형식(German locale)으로 표시해야 합니다
+- 소수점은 콤마(,)로 표시하고, 천 단위 구분자는 점(.)을 사용해야 합니다
+- 숫자 포맷팅 예시: 1.234,56
+- 금액 포맷팅에는 다음과 같은 방법을 사용합니다:
+  ```typescript
+  // 프로젝트에 이미 구현된 유틸리티 함수 사용하기 (권장)
+  import { formatEuro } from '@/lib/utils';
+  
+  // 유로 금액 포맷팅 (€ 기호 포함)
+  const formattedAmount = formatEuro(amount, false); // 두 번째 매개변수는 1000으로 나눌지 여부
+  
+  // 숫자만 독일식으로 포맷팅하기
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('de-DE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num);
+  };
+  ```
+- 입력 필드에서는 사용자가 독일식으로 입력할 수 있도록 안내하고, 데이터를 저장하기 전에 적절히 파싱해야 합니다
+- 독일식 숫자 문자열을 JavaScript 숫자로 변환할 때는 다음과 같은 방법을 사용합니다:
+  ```typescript
+  // 독일식 숫자 문자열(예: "1.234,56")을 숫자로 변환
+  const parseGermanNumber = (str: string): number => {
+    return parseFloat(str.replace(/\./g, '').replace(',', '.'));
+  };
+  ```
+
+  # Next.js Params 처리 규칙
+
+## Server Component에서의 params 처리
+```typescript
+// 1. React.use import 추가
+import { use } from 'react'
+
+// 2. params 타입 정의
+type Props = {
+  params: Promise<{
+    locale: string;
+  }>;
+};
+
+// 3. params 접근 방식
+export default function Page({ params }: Props) {
+  const { locale } = use(params);
+  // ...
+}
+```
+
+## Client Component에서의 params 처리
+```typescript
+// Client Component에서는 일반 객체로 처리
+type Props = {
+  params: {
+    locale: string;
+  };
+};
+
+export default function Page({ params }: Props) {
+  const locale = params.locale;
+  // ...
+}
+```
+
+## 주의사항
+- Server Component: Promise + use() 사용 필수
+- Client Component: 일반 객체로 처리
+- 'use client' 지시어가 있는 경우 Promise + use() 사용 불가
+
+
+## React Component Rules
+
+### 상태 관리 원칙
+
+1. 단방향 데이터 흐름
+   - 상태는 반드시 최상위 컴포넌트에서만 관리
+   - 하위 컴포넌트는 순수 표시용으로 구현
+   - props는 읽기 전용으로 취급
+   - 상태 업데이트는 한 곳에서만 수행
+
+2. 상태 업데이트 최적화
+   - 이전 상태와 비교하여 실제 변경사항이 있을 때만 업데이트
+   - 불필요한 상태 업데이트 방지
+   - 상태 변경 시 깊은 비교(deep comparison) 수행
+
+### useEffect 사용 규칙
+
+1. 의존성 배열 관리
+   - 실제 사용되는 의존성만 포함
+   - 불필요한 의존성 제거
+   - 의존성이 변경될 때만 실행되도록 최적화
+
+2. 클린업 함수 필수 구현
+   - 비동기 작업 취소
+   - 구독 해제
+   - 타이머 정리
+   - 메모리 누수 방지
+
+### 메모이제이션 규칙
+
+1. useMemo 사용
+   - 고비용 계산에만 적용
+   - 의존성이 변경될 때만 재계산
+   - 불필요한 계산 방지
+
+2. useCallback 사용
+   - 자식 컴포넌트에 전달되는 함수에 적용
+   - 불필요한 함수 재생성 방지
+   - 의존성 배열 최소화
+
+3. React.memo 사용
+   - 순수 표시용 컴포넌트에만 적용
+   - props가 변경될 때만 리렌더링
+   - 불필요한 리렌더링 방지
+
+### 비동기 작업 처리 규칙
+
+1. 상태 업데이트 안전성
+   - 컴포넌트 마운트 상태 확인
+   - 비동기 작업 취소 처리
+   - 레이스 컨디션 방지
+
+2. 에러 처리
+   - try-catch 구문 필수 사용
+   - 사용자 친화적 에러 메시지 표시
+   - 에러 로깅 구현
+
+### 성능 최적화 규칙
+
+1. 리렌더링 최적화
+   - 컴포넌트를 작은 단위로 분리
+   - 상태 업데이트 범위 최소화
+   - 불필요한 props 전달 방지
+
+2. 계산 최적화
+   - 고비용 계산은 메모이제이션 필수
+   - 불필요한 재계산 방지
+   - 계산 로직 분리
+
+### 디버깅 지원 규칙
+
+1. 개발 모드 로깅
+   - 중요 상태 변경 로깅
+   - 성능 측정 포인트 설정
+   - 환경별 로깅 레벨 구분
+
+2. 에러 처리
+   - 에러 경계(Error Boundary) 구현
+   - 에러 복구 전략 수립
+   - 사용자 피드백 제공
+
+### 코드 구조화 규칙
+
+1. 관심사 분리
+   - 비즈니스 로직과 UI 로직 분리
+   - 재사용 가능한 훅 분리
+   - 유틸리티 함수 모듈화
+
+2. 타입 안전성
+   - Props 타입 명시적 정의
+   - 상태 타입 정의
+   - 타입 가드 활용

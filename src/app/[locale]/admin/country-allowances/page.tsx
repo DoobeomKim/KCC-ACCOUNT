@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Download, Upload, Plus, Pencil, Check, X, AlertCircle, CheckCircle2, Trash2 } from "lucide-react"
+import { Download, Upload, Plus, Pencil, Check, X, AlertCircle, CheckCircle2, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import Sidebar from "@/components/layout/Sidebar"
 import { supabase } from "@/lib/supabase"
 import type { CountryAllowance, CountryAllowanceFormData } from "@/types/country-allowances"
@@ -43,6 +43,7 @@ interface CountryAllowanceData {
 }
 
 export default function CountryAllowancesPage() {
+  const t = useTranslations()
   const [countryAllowances, setCountryAllowances] = useState<CountryAllowanceData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [userRole, setUserRole] = useState<string>('')
@@ -63,6 +64,11 @@ export default function CountryAllowancesPage() {
   const router = useRouter()
   const pathname = usePathname()
   const locale = pathname.split('/')[1]
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [sortConfig, setSortConfig] = useState<{
+    key: 'country_code' | 'country_name_de' | 'country_name_ko' | null;
+    direction: 'asc' | 'desc' | null;
+  }>({ key: null, direction: null });
 
   const loadData = async () => {
     try {
@@ -219,16 +225,17 @@ export default function CountryAllowancesPage() {
   }
 
   // Excel 파일 다운로드
-  const handleExport = () => {
+  const handleExport = async () => {
+    setIsDownloading(true)
     try {
       // 데이터 준비
       const exportData = countryAllowances.map(item => ({
-        '국가 코드': item.country_code,
-        '국가명 (독일어)': item.country_name_de,
-        '국가명 (한국어)': item.country_name_ko,
-        '24시간 일당': item.full_day_amount,
-        '8시간 미만 일당': item.partial_day_amount,
-        '숙박비 한도': item.accommodation_amount
+        'country_code': item.country_code,
+        'country_name_de': item.country_name_de,
+        'country_name_ko': item.country_name_ko,
+        'full_day_amount': item.full_day_amount,
+        'partial_day_amount': item.partial_day_amount,
+        'accommodation_amount': item.accommodation_amount
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -250,6 +257,8 @@ export default function CountryAllowancesPage() {
     } catch (error) {
       console.error('Error exporting data:', error);
       toast.error('엑셀 파일 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsDownloading(false)
     }
   };
 
@@ -257,12 +266,12 @@ export default function CountryAllowancesPage() {
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) {
-      toast.error('파일을 선택해주세요.')
+      toast.error(t('countryAllowances.uploadDialog.noData'))
       return
     }
 
     setUploadStatus('processing')
-    setUploadMessage('파일을 처리하는 중입니다...')
+    setUploadMessage(t('countryAllowances.uploadDialog.processing'))
 
     try {
       const reader = new FileReader()
@@ -275,7 +284,7 @@ export default function CountryAllowancesPage() {
 
           if (jsonData.length === 0) {
             setUploadStatus('error')
-            setUploadMessage('파일에 데이터가 없습니다.')
+            setUploadMessage(t('countryAllowances.uploadDialog.noData'))
             return
           }
 
@@ -290,12 +299,13 @@ export default function CountryAllowancesPage() {
               return value
             }
 
-            const countryCode = row.country_code?.toString().trim()
-            const countryNameDe = row.country_name_de?.toString().trim()
-            const countryNameKo = row.country_name_ko?.toString().trim() || countryNameDe
-            const fullDayAmount = cleanNumber(row.full_day_amount)
-            const partialDayAmount = cleanNumber(row.partial_day_amount)
-            const accommodationAmount = cleanNumber(row.accommodation_amount)
+            // 영문 필드명으로 데이터 추출
+            const countryCode = row['country_code']?.toString().trim()
+            const countryNameDe = row['country_name_de']?.toString().trim()
+            const countryNameKo = row['country_name_ko']?.toString().trim()
+            const fullDayAmount = cleanNumber(row['full_day_amount'])
+            const partialDayAmount = cleanNumber(row['partial_day_amount'])
+            const accommodationAmount = cleanNumber(row['accommodation_amount'])
 
             if (
               countryCode &&
@@ -307,13 +317,14 @@ export default function CountryAllowancesPage() {
               uniqueData.set(countryCode, {
                 country_code: countryCode,
                 country_name_de: countryNameDe,
-                country_name_ko: countryNameKo,
+                country_name_ko: countryNameKo || countryNameDe,
                 full_day_amount: fullDayAmount,
                 partial_day_amount: partialDayAmount,
                 accommodation_amount: accommodationAmount
               })
             } else {
-              console.warn('Invalid row:', row)
+              console.warn('유효하지 않은 데이터:', row)
+              setUploadMessage(t('countryAllowances.uploadDialog.invalidData'))
             }
           })
 
@@ -321,7 +332,7 @@ export default function CountryAllowancesPage() {
 
           if (validData.length === 0) {
             setUploadStatus('error')
-            setUploadMessage('유효한 데이터가 없습니다. 모든 필수 필드가 올바르게 입력되었는지 확인해주세요.')
+            setUploadMessage(t('countryAllowances.uploadDialog.invalidData'))
             return
           }
 
@@ -334,14 +345,17 @@ export default function CountryAllowancesPage() {
           if (error) throw error
 
           setUploadStatus('success')
-          setUploadMessage(`${validData.length}개의 데이터가 성공적으로 업로드되었습니다.`)
+          setUploadMessage(t('countryAllowances.uploadDialog.uploadSuccess', { count: validData.length }))
           await loadData()
-          setIsDialogOpen(false)
+          // 1.5초 후에 다이얼로그 닫기
+          setTimeout(() => {
+            setIsDialogOpen(false)
+          }, 1500)
 
         } catch (error) {
           console.error('Error processing file:', error)
           setUploadStatus('error')
-          setUploadMessage(error instanceof Error ? error.message : '파일 처리 중 오류가 발생했습니다.')
+          setUploadMessage(t('countryAllowances.uploadDialog.uploadError'))
         }
       }
 
@@ -349,7 +363,7 @@ export default function CountryAllowancesPage() {
     } catch (error) {
       console.error('Error importing file:', error)
       setUploadStatus('error')
-      setUploadMessage('파일 가져오기 중 오류가 발생했습니다.')
+      setUploadMessage(t('countryAllowances.uploadDialog.uploadError'))
     }
   }
 
@@ -422,6 +436,37 @@ export default function CountryAllowancesPage() {
     }
   }
 
+  // 정렬 처리 함수
+  const handleSort = (key: 'country_code' | 'country_name_de' | 'country_name_ko') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+
+    setSortConfig({ key, direction });
+
+    const sortedData = [...countryAllowances].sort((a, b) => {
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    setCountryAllowances(sortedData);
+  };
+
+  // 정렬 상태에 따른 아이콘 표시
+  const getSortIcon = (key: 'country_code' | 'country_name_de' | 'country_name_ko') => {
+    if (sortConfig.key !== key) {
+      return <ChevronsUpDown className="h-4 w-4 ml-1 text-gray-400" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp className="h-4 w-4 ml-1" />
+      : <ChevronDown className="h-4 w-4 ml-1" />;
+  };
+
   if (userRole !== 'admin') {
     return (
       <div className="flex min-h-screen bg-gray-100">
@@ -448,39 +493,42 @@ export default function CountryAllowancesPage() {
       <div className="flex-1 lg:ml-64">
         <div className="p-8 space-y-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold tracking-tight">국가별 출장 비용 관리</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('countryAllowances.title')}</h1>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="gap-2"
+                className={cn("gap-2", isDownloading && "loading-button")}
                 onClick={handleExport}
+                disabled={isDownloading}
               >
                 <Download className="h-4 w-4" />
-                엑셀 다운로드
+                {t('countryAllowances.buttons.excelDownload')}
               </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
                     <Upload className="h-4 w-4" />
-                    엑셀 업로드
+                    {t('countryAllowances.buttons.excelUpload')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>엑셀 파일 업로드</DialogTitle>
+                    <DialogTitle>{t('countryAllowances.uploadDialog.title')}</DialogTitle>
                     <DialogDescription>
-                      국가별 출장 비용 데이터가 포함된 엑셀 파일을 업로드해주세요.
+                      {t('countryAllowances.uploadDialog.description')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="grid w-full max-w-sm items-center gap-1.5">
-                      <Label htmlFor="excel-upload">파일 선택</Label>
+                      <Label htmlFor="excel-upload">{t('countryAllowances.uploadDialog.selectFile')}</Label>
                       <Input
                         id="excel-upload"
                         type="file"
                         accept=".xlsx,.xls"
                         onChange={handleImport}
                         disabled={uploadStatus === 'processing'}
+                        className="cursor-pointer"
+                        placeholder={t('countryAllowances.uploadDialog.noFileSelected')}
                       />
                     </div>
                     {uploadStatus !== 'idle' && (
@@ -503,7 +551,7 @@ export default function CountryAllowancesPage() {
                 onClick={() => setIsAddModalOpen(true)}
               >
                 <Plus className="h-4 w-4" />
-                새로 추가
+                {t('countryAllowances.buttons.add')}
               </Button>
             </div>
           </div>
@@ -513,13 +561,37 @@ export default function CountryAllowancesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>국가 코드</TableHead>
-                    <TableHead>국가명 (독일어)</TableHead>
-                    <TableHead>국가명 (한국어)</TableHead>
-                    <TableHead className="text-right">24시간 일당</TableHead>
-                    <TableHead className="text-right">8시간 미만 일당</TableHead>
-                    <TableHead className="text-right">숙박비 한도</TableHead>
-                    <TableHead className="w-[100px]">관리</TableHead>
+                    <TableHead 
+                      onClick={() => handleSort('country_code')}
+                      className="cursor-pointer hover:bg-gray-50 text-sm"
+                    >
+                      <div className="flex items-center">
+                        {t('countryAllowances.table.headers.countryCode')}
+                        {getSortIcon('country_code')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      onClick={() => handleSort('country_name_de')}
+                      className="cursor-pointer hover:bg-gray-50 text-sm"
+                    >
+                      <div className="flex items-center">
+                        {t('countryAllowances.table.headers.countryNameDe')}
+                        {getSortIcon('country_name_de')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      onClick={() => handleSort('country_name_ko')}
+                      className="cursor-pointer hover:bg-gray-50 text-sm"
+                    >
+                      <div className="flex items-center">
+                        {t('countryAllowances.table.headers.countryNameKo')}
+                        {getSortIcon('country_name_ko')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right text-sm">{t('countryAllowances.table.headers.fullDayAmount')}</TableHead>
+                    <TableHead className="text-right text-sm">{t('countryAllowances.table.headers.partialDayAmount')}</TableHead>
+                    <TableHead className="text-right text-sm">{t('countryAllowances.table.headers.accommodationAmount')}</TableHead>
+                    <TableHead className="w-[100px] text-sm">{t('countryAllowances.table.headers.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -570,77 +642,76 @@ export default function CountryAllowancesPage() {
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>새로운 국가 정보 추가</DialogTitle>
+            <DialogTitle>{t('countryAllowances.addDialog.title')}</DialogTitle>
             <DialogDescription>
-              새로운 국가의 출장 비용 정보를 입력해주세요.
+              {t('countryAllowances.addDialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>국가 코드</Label>
+              <Label className="text-sm">{t('countryAllowances.form.countryCode.label')}</Label>
               <div className="space-y-1">
                 <Input
                   value={formData.country_code}
                   onChange={(e) => handleCountryCodeChange(e.target.value)}
                   maxLength={6}
-                  placeholder="DE 또는 AU-SYD"
+                  placeholder={t('countryAllowances.form.countryCode.placeholder')}
                 />
                 <p className="text-sm text-muted-foreground">
-                  기본 국가: 2자리 코드 (예: DE)<br />
-                  도시 구분 필요시: 2자리-3자리 코드 (예: AU-SYD)
+                  {t('countryAllowances.form.countryCode.description')}
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>국가명 (독일어)</Label>
+              <Label className="text-sm">{t('countryAllowances.form.countryNameDe.label')}</Label>
               <Input
                 value={formData.country_name_de}
                 onChange={(e) => handleInputChange('country_name_de', e.target.value)}
-                placeholder="Deutschland"
+                placeholder={t('countryAllowances.form.countryNameDe.placeholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>국가명 (한국어)</Label>
+              <Label className="text-sm">{t('countryAllowances.form.countryNameKo.label')}</Label>
               <Input
                 value={formData.country_name_ko}
                 onChange={(e) => handleInputChange('country_name_ko', e.target.value)}
-                placeholder="독일"
+                placeholder={t('countryAllowances.form.countryNameKo.placeholder')}
               />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>24시간 일당 (€)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">{t('countryAllowances.form.fullDayAmount.label')}</Label>
                 <Input
                   type="number"
                   value={formData.full_day_amount}
                   onChange={(e) => handleInputChange('full_day_amount', e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t('countryAllowances.form.fullDayAmount.placeholder')}
                   step="0.01"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>8시간 미만 일당 (€)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">{t('countryAllowances.form.partialDayAmount.label')}</Label>
                 <Input
                   type="number"
                   value={formData.partial_day_amount}
                   onChange={(e) => handleInputChange('partial_day_amount', e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t('countryAllowances.form.partialDayAmount.placeholder')}
                   step="0.01"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>숙박비 한도 (€)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">{t('countryAllowances.form.accommodationAmount.label')}</Label>
                 <Input
                   type="number"
                   value={formData.accommodation_amount}
                   onChange={(e) => handleInputChange('accommodation_amount', e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t('countryAllowances.form.accommodationAmount.placeholder')}
                   step="0.01"
                 />
               </div>
@@ -649,10 +720,10 @@ export default function CountryAllowancesPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              취소
+              {t('common.buttons.cancel')}
             </Button>
             <Button onClick={handleAdd}>
-              추가
+              {t('common.buttons.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -662,77 +733,76 @@ export default function CountryAllowancesPage() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>국가 정보 수정</DialogTitle>
+            <DialogTitle>{t('countryAllowances.editDialog.title')}</DialogTitle>
             <DialogDescription>
-              국가의 출장 비용 정보를 수정해주세요.
+              {t('countryAllowances.editDialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>국가 코드</Label>
+              <Label className="text-sm">{t('countryAllowances.form.countryCode.label')}</Label>
               <div className="space-y-1">
                 <Input
                   value={formData.country_code}
                   onChange={(e) => handleCountryCodeChange(e.target.value)}
                   maxLength={6}
-                  placeholder="DE 또는 AU-SYD"
+                  placeholder={t('countryAllowances.form.countryCode.placeholder')}
                 />
                 <p className="text-sm text-muted-foreground">
-                  기본 국가: 2자리 코드 (예: DE)<br />
-                  도시 구분 필요시: 2자리-3자리 코드 (예: AU-SYD)
+                  {t('countryAllowances.form.countryCode.description')}
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>국가명 (독일어)</Label>
+              <Label className="text-sm">{t('countryAllowances.form.countryNameDe.label')}</Label>
               <Input
                 value={formData.country_name_de}
                 onChange={(e) => handleInputChange('country_name_de', e.target.value)}
-                placeholder="Deutschland"
+                placeholder={t('countryAllowances.form.countryNameDe.placeholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>국가명 (한국어)</Label>
+              <Label className="text-sm">{t('countryAllowances.form.countryNameKo.label')}</Label>
               <Input
                 value={formData.country_name_ko}
                 onChange={(e) => handleInputChange('country_name_ko', e.target.value)}
-                placeholder="독일"
+                placeholder={t('countryAllowances.form.countryNameKo.placeholder')}
               />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>24시간 일당 (€)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">{t('countryAllowances.form.fullDayAmount.label')}</Label>
                 <Input
                   type="number"
                   value={formData.full_day_amount}
                   onChange={(e) => handleInputChange('full_day_amount', e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t('countryAllowances.form.fullDayAmount.placeholder')}
                   step="0.01"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>8시간 미만 일당 (€)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">{t('countryAllowances.form.partialDayAmount.label')}</Label>
                 <Input
                   type="number"
                   value={formData.partial_day_amount}
                   onChange={(e) => handleInputChange('partial_day_amount', e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t('countryAllowances.form.partialDayAmount.placeholder')}
                   step="0.01"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>숙박비 한도 (€)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">{t('countryAllowances.form.accommodationAmount.label')}</Label>
                 <Input
                   type="number"
                   value={formData.accommodation_amount}
                   onChange={(e) => handleInputChange('accommodation_amount', e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t('countryAllowances.form.accommodationAmount.placeholder')}
                   step="0.01"
                 />
               </div>
@@ -745,10 +815,10 @@ export default function CountryAllowancesPage() {
               resetForm()
               setSelectedId(null)
             }}>
-              취소
+              {t('common.buttons.cancel')}
             </Button>
             <Button onClick={handleUpdate}>
-              수정
+              {t('common.buttons.update')}
             </Button>
           </DialogFooter>
         </DialogContent>

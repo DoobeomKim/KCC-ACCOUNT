@@ -153,6 +153,7 @@
       "transportationTotal": "교통비 합계",
       "accommodationTotal": "숙박비 합계",
       "entertainmentTotal": "접대비 합계",
+      "miscellaneousTotal": "기타 금액 합계",
       "mealAllowanceTotal": "식대 합계",
       "grandTotal": "총 합계"
     },
@@ -211,8 +212,14 @@
         "label": "국가",
         "placeholder": "국가를 입력하세요"
       },
-      "checkIn": "체크인",
-      "checkOut": "체크아웃",
+      "checkIn": {
+        "label": "체크인 날짜",
+        "placeholder": "체크인 날짜 선택"
+      },
+      "checkOut": {
+        "label": "체크아웃 날짜",
+        "placeholder": "체크아웃 날짜 선택"
+      },
       "date": "날짜",
       "hotelName": {
         "label": "호텔명",
@@ -236,7 +243,10 @@
         "notSelected": "조식 선택되지 않음",
         "selectDates": "체크인/체크아웃 날짜를 선택해주세요"
       },
-      "deleteButton": "삭제"
+      "deleteButton": "삭제",
+      "privateRate": {
+        "description": "숙박비 한도: {amount}"
+      }
     },
     "transportation": {
       "title": "교통비 정보",
@@ -257,8 +267,9 @@
         "placeholder": "날짜"
       },
       "mileage": {
-        "label": "주행거리 (KM)",
-        "placeholder": "주행거리를 입력하세요"
+        "label": "주행거리(KM)",
+        "placeholder": "주행거리를 입력하세요",
+        "description": "주행거리 수당 = 주행거리 × 0.30€/km"
       },
       "licensePlate": {
         "label": "번호판",
@@ -276,11 +287,11 @@
       },
       "vat": {
         "label": "부가세",
-        "placeholder": "0.00"
+        "placeholder": "0,00"
       },
       "totalAmount": {
         "label": "총액 (세금 포함)",
-        "placeholder": "0.00"
+        "placeholder": "0,00"
       },
       "deleteButton": "삭제"
     },
@@ -312,11 +323,45 @@
       },
       "vat": {
         "label": "부가세",
-        "placeholder": "0.00"
+        "placeholder": "0,00"
       },
       "totalAmount": {
         "label": "총액 (세금 포함)",
-        "placeholder": "0.00"
+        "placeholder": "0,00"
+      },
+      "deleteButton": "삭제"
+    },
+    "miscellaneous": {
+      "title": "기타 금액 정보",
+      "addButton": "+ 기타 금액 추가",
+      "item": "기타 금액 #{number}",
+      "noDate": "날짜 미지정",
+      "type": {
+        "label": "유형",
+        "placeholder": "항목을 입력하세요"
+      },
+      "date": {
+        "label": "날짜",
+        "placeholder": "날짜"
+      },
+      "country": {
+        "label": "국가",
+        "placeholder": "국가 선택",
+        "germany": "독일",
+        "korea": "대한민국",
+        "other": "기타 국가"
+      },
+      "companyName": {
+        "label": "업체명",
+        "placeholder": "업체명을 입력하세요"
+      },
+      "vat": {
+        "label": "부가세",
+        "placeholder": "0,00"
+      },
+      "totalAmount": {
+        "label": "총액 (세금 포함)",
+        "placeholder": "0,00"
       },
       "deleteButton": "삭제"
     },
@@ -355,6 +400,66 @@
       }
     }
   },
+  "countryAllowances": {
+    "title": "국가별 출장 비용 관리",
+    "buttons": {
+      "excelDownload": "엑셀 다운로드",
+      "excelUpload": "엑셀 업로드",
+      "add": "새로 추가"
+    },
+    "table": {
+      "headers": {
+        "countryCode": "국가 코드",
+        "countryNameDe": "국가명 (독일어)",
+        "countryNameKo": "국가명 (한국어)",
+        "fullDayAmount": "전일 일당",
+        "partialDayAmount": "반일 일당",
+        "accommodationAmount": "숙박비",
+        "actions": "관리"
+      }
+    },
+    "uploadDialog": {
+      "title": "엑셀 파일 업로드",
+      "description": "국가별 데이터가 포함된 엑셀 파일을 업로드하세요",
+      "selectFile": "파일 선택",
+      "noFileSelected": "선택된 파일 없음"
+    },
+    "addDialog": {
+      "title": "새로운 국가 정보 추가",
+      "description": "새로운 국가의 출장 비용 정보를 입력해주세요"
+    },
+    "editDialog": {
+      "title": "국가 정보 수정",
+      "description": "국가의 출장 비용 정보를 수정해주세요"
+    },
+    "form": {
+      "countryCode": {
+        "label": "국가 코드",
+        "placeholder": "DE 또는 AU-SYD",
+        "description": "기본 국가: 2자리 코드 (예: DE)\n도시 구분 필요시: 2자리-3자리 코드 (예: AU-SYD)"
+      },
+      "countryNameDe": {
+        "label": "국가명 (독일어)",
+        "placeholder": "Deutschland"
+      },
+      "countryNameKo": {
+        "label": "국가명 (한국어)",
+        "placeholder": "독일"
+      },
+      "fullDayAmount": {
+        "label": "전일 일당 (€)",
+        "placeholder": "0.00"
+      },
+      "partialDayAmount": {
+        "label": "반일 일당 (€)",
+        "placeholder": "0.00"
+      },
+      "accommodationAmount": {
+        "label": "숙박비 (€)",
+        "placeholder": "0.00"
+      }
+    }
+  },
   "validation": {
     "nameRequired": "출장자 이름을 입력해주세요.",
     "startDateRequired": "출장 시작일을 선택해주세요.",
@@ -368,6 +473,14 @@
     "transportationTypeRequired": "교통비 항목 {index}의 교통 수단을 선택해주세요.",
     "transportationIncomplete": "교통비 항목 {index}의 정보가 불완전합니다.",
     "accommodationIncomplete": "숙박비 항목 {index}의 정보가 불완전합니다.",
-    "entertainmentIncomplete": "접대비 항목 {index}의 정보가 불완전합니다."
+    "entertainmentIncomplete": "접대비 항목 {index}의 정보가 불완전합니다.",
+    "miscellaneousIncomplete": "기타 금액 항목 {index}의 정보가 불완전합니다."
+  },
+  "common": {
+    "buttons": {
+      "cancel": "취소",
+      "add": "추가",
+      "update": "수정"
+    }
   }
 }

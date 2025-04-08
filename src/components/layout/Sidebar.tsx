@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
-import { KCCIcon } from '@/app/icon'
+import KCCIcon from '@/components/KCCIcon'
 import {
   LayoutDashboard,
   Receipt,

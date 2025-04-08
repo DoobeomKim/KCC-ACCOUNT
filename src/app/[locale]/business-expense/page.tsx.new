@@ -1,0 +1,380 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { format as dateFormat } from 'date-fns'
+import { toast } from 'sonner'
+import { 
+  Check, 
+  Star, 
+  CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Plus,
+  AlertCircle,
+  Loader2,
+  Search,
+  X,
+  Trash2
+} from "lucide-react"
+import { useFormDataPolicy } from '@/hooks/useFormDataPolicy'
+import { useRouter, usePathname } from 'next/navigation'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import Sidebar from '@/components/layout/Sidebar'
+import DatePicker from '@/components/DatePicker'
+import { supabase } from '@/lib/supabase'
+import { cn, formatNumber, parseGermanNumber } from '@/lib/utils'
+import { 
+  Alert, 
+  AlertTitle, 
+  AlertDescription 
+} from "@/components/ui/alert"
+import { AccommodationCalendar } from '@/components/AccommodationCalendar'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
+import MealAllowanceInfo from '@/components/MealAllowanceInfo'
+import CountrySelector from "@/components/CountrySelector"
+import { MILEAGE_RATE } from '@/lib/constants'
+import { 
+  ExpenseForm,
+  ExpenseFormVisit,
+  ExpenseFormTransportation,
+  ExpenseFormAccommodation,
+  ExpenseFormEntertainment,
+  MealEntry
+} from '@/types/expense'
+import { GermanNumberInput } from "@/components/ui/german-number-input"
+
+interface CompanySettings {
+  email: string
+  company_name: string
+  city: string
+}
+
+interface CountryOption {
+  value: string;
+  label: string;
+  type: 'business' | 'simple';  // business: 출장비용관리 연동, simple: 독일/기타
+}
+
+// 필수 라벨 컴포넌트
+const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex items-center gap-1">
+    {children}
+    <span className="text-red-500">*</span>
+  </div>
+)
+
+// 초기 폼 데이터
+const initialFormData: ExpenseForm = {
+  name: '',
+  startDate: undefined,
+  startTime: '',
+  endDate: undefined,
+  endTime: '',
+  visits: [],
+  purpose: '',
+  projectName: '',
+  projectNumber: '',
+  mealOption: false,
+  accommodationOption: false,
+  date: undefined,
+  totalAmount: '',
+  totalMealAllowance: 0,
+  mealAllowanceInfo: [],
+  accommodations: [],
+  transportation: [],
+  meals: [],
+  entertainment: [],
+  startDatePickerOpen: false,
+  endDatePickerOpen: false
+};
+
+// 교통비 입력 컴포넌트
+const TransportationInput = ({ transportation, updateTransportation, removeTransportation }: {
+  transportation: ExpenseFormTransportation[];
+  updateTransportation: (index: number, field: keyof ExpenseFormTransportation, value: string) => void;
+  removeTransportation: (index: number) => void;
+}) => {
+  const t = useTranslations();
+  
+  return (
+    <div>
+      {transportation.map((item, index) => (
+        <div key={index} className="mb-4 p-4 border rounded-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">{t("expense.transportation.title")} #{index + 1}</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => removeTransportation(index)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label>{t("expense.transportation.date.label")}</Label>
+              <DatePicker
+                date={item.date}
+                onSelect={(date) => updateTransportation(index, 'date', date)}
+                isOpen={item.datePickerOpen}
+                onOpenChange={(isOpen) => updateTransportation(index, 'datePickerOpen', isOpen)}
+              />
+            </div>
+            <div>
+              <Label>{t("expense.transportation.type.label")}</Label>
+              <Select
+                value={item.type}
+                onValueChange={(value) => updateTransportation(index, 'type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("expense.transportation.type.placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="flight">{t("expense.transportation.type.flight")}</SelectItem>
+                  <SelectItem value="train">{t("expense.transportation.type.train")}</SelectItem>
+                  <SelectItem value="taxi">{t("expense.transportation.type.taxi")}</SelectItem>
+                  <SelectItem value="fuel">{t("expense.transportation.type.fuel")}</SelectItem>
+                  <SelectItem value="rental">{t("expense.transportation.type.rental")}</SelectItem>
+                  <SelectItem value="mileage">{t("expense.transportation.type.mileage")}</SelectItem>
+                  <SelectItem value="km_pauschale">{t("expense.transportation.type.km_pauschale")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {(item.type === 'mileage' || item.type === 'km_pauschale') ? (
+            <div className="mb-4">
+              <Label>{t("expense.transportation.mileage.label")}</Label>
+              <div className="relative">
+                <GermanNumberInput
+                  value={item.mileage || ''}
+                  onChange={(value) => updateTransportation(index, 'mileage', String(value))}
+                  placeholder={t("expense.transportation.mileage.placeholder")}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">km</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* 결제자와 부가세를 한 줄에 배치 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* 결제자 */}
+                <div className="space-y-2">
+                  <Label>{t("expense.paidBy.label")}</Label>
+                  <Select
+                    value={item.paidBy}
+                    onValueChange={(value) => updateTransportation(index, 'paidBy', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("expense.paidBy.placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="company">{t("expense.paidBy.company")}</SelectItem>
+                      <SelectItem value="personal">{t("expense.paidBy.personal")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* 부가세 */}
+                <div className="space-y-2">
+                  <Label>{t("expense.transportation.vat.label")}</Label>
+                  <div className="relative">
+                    <GermanNumberInput
+                      value={item.vat}
+                      onChange={(value) => updateTransportation(index, 'vat', String(value))}
+                      placeholder={t("expense.transportation.vat.placeholder")}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2">%</span>
+                  </div>
+                </div>
+              </div>
+              {/* 총액 */}
+              <div className="space-y-2 mb-4">
+                <Label>{t("expense.transportation.totalAmount.label")}</Label>
+                <div className="relative">
+                  <GermanNumberInput
+                    value={item.totalAmount}
+                    onChange={(value) => updateTransportation(index, 'totalAmount', String(value))}
+                    placeholder={t("expense.transportation.totalAmount.placeholder")}
+                    className="pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2">€</span>
+                </div>
+              </div>
+            </>
+          )}
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label>{t("expense.transportation.country.label")}</Label>
+              <CountrySelector
+                value={item.country}
+                onValueChange={(value) => updateTransportation(index, 'country', value)}
+                placeholder={t("expense.transportation.country.placeholder")}
+              />
+            </div>
+            <div>
+              <Label>{t("expense.transportation.companyName.label")}</Label>
+              <Input
+                value={item.companyName}
+                onChange={(e) => updateTransportation(index, 'companyName', e.target.value)}
+                placeholder={t("expense.transportation.companyName.placeholder")}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// 접대비 입력 컴포넌트
+const EntertainmentInput = ({ entertainment, updateEntertainment, removeEntertainment }: {
+  entertainment: ExpenseFormEntertainment[];
+  updateEntertainment: (index: number, field: keyof ExpenseFormEntertainment, value: string) => void;
+  removeEntertainment: (index: number) => void;
+}) => {
+  const t = useTranslations();
+  
+  return (
+    <div>
+      {entertainment.map((item, index) => (
+        <div key={index} className="mb-4 p-4 border rounded-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">{t("expense.entertainment.title")} #{index + 1}</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => removeEntertainment(index)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label>{t("expense.entertainment.totalAmount.label")}</Label>
+              <div className="relative">
+                <GermanNumberInput
+                  value={item.totalAmount}
+                  onChange={(value) => updateEntertainment(index, 'totalAmount', value)}
+                  placeholder={t("expense.entertainment.totalAmount.placeholder")}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">€</span>
+              </div>
+            </div>
+            <div>
+              <Label>{t("expense.entertainment.vat.label")}</Label>
+              <div className="relative">
+                <GermanNumberInput
+                  value={item.vat}
+                  onChange={(value) => updateEntertainment(index, 'vat', value)}
+                  placeholder={t("expense.entertainment.vat.placeholder")}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">%</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label>{t("expense.entertainment.date.label")}</Label>
+              <DatePicker
+                date={item.date}
+                onSelect={(date) => updateEntertainment(index, 'date', date)}
+                isOpen={item.datePickerOpen}
+                onOpenChange={(isOpen) => updateEntertainment(index, 'datePickerOpen', isOpen)}
+              />
+            </div>
+            <div>
+              <Label>{t("expense.entertainment.type.label")}</Label>
+              <Select
+                value={item.type}
+                onValueChange={(value) => updateEntertainment(index, 'type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("expense.entertainment.type.placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="breakfast">{t("expense.entertainment.type.breakfast")}</SelectItem>
+                  <SelectItem value="lunch">{t("expense.entertainment.type.lunch")}</SelectItem>
+                  <SelectItem value="dinner">{t("expense.entertainment.type.dinner")}</SelectItem>
+                  <SelectItem value="coffee">{t("expense.entertainment.type.coffee")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label>{t("expense.entertainment.country.label")}</Label>
+              <CountrySelector
+                value={item.country}
+                onValueChange={(value) => updateEntertainment(index, 'country', value)}
+                placeholder={t("expense.entertainment.country.placeholder")}
+              />
+            </div>
+            <div>
+              <Label>{t("expense.entertainment.companyName.label")}</Label>
+              <Input
+                value={item.companyName}
+                onChange={(e) => updateEntertainment(index, 'companyName', e.target.value)}
+                placeholder={t("expense.entertainment.companyName.placeholder")}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label>{t("expense.entertainment.paidBy.label")}</Label>
+            <Select
+              value={item.paidBy}
+              onValueChange={(value) => updateEntertainment(index, 'paidBy', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("expense.entertainment.paidBy.placeholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="company">{t("expense.entertainment.paidBy.company")}</SelectItem>
+                <SelectItem value="personal">{t("expense.entertainment.paidBy.personal")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}; 

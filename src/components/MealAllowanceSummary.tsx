@@ -201,16 +201,23 @@ export default function MealAllowanceDaySummary({
     let lunchDeduction = 0;
     let dinnerDeduction = 0;
     
+    // entertainmentExpense가 undefined인 경우 기본값 사용
+    const expense = entertainmentExpense || {
+      breakfast: false,
+      lunch: false,
+      dinner: false
+    };
+    
     // 각 식사별로 차감 금액 계산
-    if (entertainmentExpense?.breakfast) {
+    if (expense.breakfast) {
       breakfastDeduction = baseForDeduction * 0.2;
     }
     
-    if (entertainmentExpense?.lunch) {
+    if (expense.lunch) {
       lunchDeduction = baseForDeduction * 0.4;
     }
     
-    if (entertainmentExpense?.dinner) {
+    if (expense.dinner) {
       dinnerDeduction = baseForDeduction * 0.4;
     }
     

@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { format as dateFormat } from 'date-fns'
 import { toast } from 'sonner'
@@ -9,7 +9,7 @@ import { ArrowLeft, Save, Loader2, Pencil, FileDown, ChevronLeft } from 'lucide-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Sidebar from '@/components/layout/Sidebar'
-import { ExpenseForm } from '../page'
+import { ExpenseForm } from '@/types/expense'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatEuro } from '@/lib/utils'
 
@@ -59,12 +59,39 @@ interface ExpenseData {
   transportation_total: number;
   accommodation_total: number;
   entertainment_total: number;
+  miscellaneous_total: number;
   meal_allowance: number;
   grand_total: number;
   created_at: string;
 }
 
+// 타입 정의 업데이트
+interface ExpenseFormTransportation {
+  date: Date | undefined;
+  type: 'flight' | 'train' | 'taxi' | 'fuel' | 'rental' | 'mileage' | 'km_pauschale' | undefined;
+  country: string;
+  companyName: string;
+  paidBy: 'company' | 'personal' | undefined;
+  vat: string;
+  totalAmount: string;  // amount 대신 totalAmount 사용
+  mileage?: string;
+  isExpanded: boolean;
+  datePickerOpen: boolean;
+  otherType?: string;
+}
+
+// 마일리지 타입 체크 함수 추가
+const isMileageType = (type: string | undefined) => type === 'mileage' || type === 'km_pauschale';
+
 export default function BusinessExpenseSummaryPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BusinessExpenseSummaryContent />
+    </Suspense>
+  )
+}
+
+function BusinessExpenseSummaryContent() {
   const t = useTranslations()
   const router = useRouter()
   const { locale } = useParams()
@@ -128,6 +155,10 @@ export default function BusinessExpenseSummaryPage() {
             });
             
             parsedData.meals.forEach((item: any) => {
+              if (item.date) item.date = parseDateFromStorage(item.date);
+            });
+            
+            parsedData.miscellaneous.forEach((item: any) => {
               if (item.date) item.date = parseDateFromStorage(item.date);
             });
             
@@ -196,7 +227,9 @@ export default function BusinessExpenseSummaryPage() {
             transportation: [],
             accommodations: [],
             entertainment: [],
-            meals: []
+            meals: [],
+            totalMealAllowance: 0,
+            mealAllowanceInfo: []
           };
           
           // 방문 데이터 가져오기
@@ -225,12 +258,12 @@ export default function BusinessExpenseSummaryPage() {
           if (transportationData) {
             formattedData.transportation = transportationData.map(item => ({
               date: item.date ? parseDateFromStorage(item.date) : undefined,
-              type: item.type as 'flight' | 'train' | 'taxi' | 'fuel' | 'rental' | 'km_pauschale' | undefined,
+              type: item.type as 'flight' | 'train' | 'taxi' | 'fuel' | 'rental' | 'mileage' | 'km_pauschale' | undefined,
               country: item.country || '',
               companyName: item.company_name || '',
               paidBy: item.paid_by as 'company' | 'personal' | undefined,
               vat: item.vat?.toString() || '',
-              amount: item.amount?.toString() || '',
+              totalAmount: item.amount?.toString() || '',  // amount를 totalAmount로 저장
               mileage: item.mileage?.toString() || '',
               licensePlate: item.license_plate || '',
               isExpanded: false,
@@ -292,7 +325,7 @@ export default function BusinessExpenseSummaryPage() {
               companyName: item.company_name || '',
               paidBy: item.paid_by as 'company' | 'personal' | undefined,
               vat: item.vat?.toString() || '',
-              amount: item.amount?.toString() || '',
+              totalAmount: item.amount?.toString() || '',  // amount를 totalAmount로 변경
               isExpanded: false,
               datePickerOpen: false,
               otherType: ''
@@ -341,6 +374,10 @@ export default function BusinessExpenseSummaryPage() {
             });
             
             parsedData.meals.forEach((item: any) => {
+              if (item.date) item.date = parseDateFromStorage(item.date);
+            });
+            
+            parsedData.miscellaneous.forEach((item: any) => {
               if (item.date) item.date = parseDateFromStorage(item.date);
             });
             console.log('날짜 객체 복원 완료');
@@ -467,7 +504,7 @@ export default function BusinessExpenseSummaryPage() {
               company_name: item.companyName,
               paid_by: item.paidBy,
               vat: item.vat ? parseFloat(item.vat) : null,
-              amount: item.amount ? parseFloat(item.amount) : null,
+              amount: item.totalAmount ? parseFloat(item.totalAmount) : null,
               mileage: item.mileage ? parseFloat(item.mileage) : null,
               license_plate: item.licensePlate
             }));
@@ -547,7 +584,7 @@ export default function BusinessExpenseSummaryPage() {
               company_name: item.companyName,
               paid_by: item.paidBy,
               vat: item.vat ? parseFloat(item.vat) : null,
-              amount: item.amount ? parseFloat(item.amount) : null
+              amount: item.totalAmount ? parseFloat(item.totalAmount) : null
             }));
             
           if (entertainmentToInsert.length > 0) {
@@ -558,6 +595,34 @@ export default function BusinessExpenseSummaryPage() {
             if (insertEntertainmentError) {
               console.error('접대비 정보 저장 오류:', insertEntertainmentError);
               toast.error('접대비 정보 저장 중 오류가 발생했습니다.');
+              return;
+            }
+          }
+        }
+          
+        // 6. 기타 금액 정보 저장
+        if (formData.miscellaneous.length > 0) {
+          const miscellaneousToInsert = formData.miscellaneous
+            .filter(item => item.date) // 날짜가 있는 항목만 필터링
+            .map(item => ({
+              expense_id: newExpenseId,
+              date: item.date ? formatDateForStorage(item.date) : null,
+              type: item.type,
+              country: item.country,
+              company_name: item.companyName,
+              paid_by: item.paidBy,
+              vat: item.vat ? parseFloat(item.vat) : null,
+              amount: item.totalAmount ? parseFloat(item.totalAmount) : null
+            }));
+            
+          if (miscellaneousToInsert.length > 0) {
+            const { error: insertMiscellaneousError } = await supabase
+              .from('expense_miscellaneous')
+              .insert(miscellaneousToInsert);
+                
+            if (insertMiscellaneousError) {
+              console.error('기타 금액 정보 저장 오류:', insertMiscellaneousError);
+              toast.error('기타 금액 정보 저장 중 오류가 발생했습니다.');
               return;
             }
           }
@@ -912,58 +977,39 @@ export default function BusinessExpenseSummaryPage() {
                   {formData.transportation.length > 0 ? (
                     <div className="space-y-4">
                       {formData.transportation.map((item, index) => (
-                        <div key={index} className="border p-4 rounded-md">
-                          <div className="grid grid-cols-4 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.transportation.date.label')}</p>
-                              <p className="font-medium">
-                                {item.date ? dateFormat(item.date, 'PPP') : '-'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.transportation.type.label')}</p>
-                              <p className="font-medium">
-                                {item.type ? t(`expense.transportation.type.${item.type}`) : '-'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.transportation.country.label') || '국가'}</p>
-                              <p className="font-medium">{item.country || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.paidBy.label')}</p>
-                              <p className="font-medium">
-                                {item.paidBy ? t(`expense.paidBy.${item.paidBy}`) : '-'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2 grid grid-cols-3 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.transportation.companyName.label') || '회사명'}</p>
-                              <p className="font-medium">{item.companyName || '-'}</p>
-                            </div>
-                            {item.type === 'km_pauschale' ? (
+                        <div key={index} className="border-t pt-4 first:border-t-0 first:pt-0">
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex justify-between items-start">
                               <div>
-                                <p className="text-sm text-muted-foreground">{t('expense.transportation.mileage.label') || '주행거리 (KM)'}</p>
-                                <p className="font-medium">{item.mileage || '-'}</p>
+                                <p className="text-sm text-muted-foreground">{t('expense.transportation.date.label')}</p>
+                                <p className="font-medium">{item.date ? dateFormat(item.date, "PPP") : '-'}</p>
                               </div>
-                            ) : (
                               <div>
-                                <p className="text-sm text-muted-foreground">{t('expense.transportation.vat.label') || '부가세'}</p>
-                                <p className="font-medium">{item.vat ? formatEuro(parseFloat(item.vat), false) : '-'}</p>
+                                <p className="text-sm text-muted-foreground">{t('expense.transportation.type.label')}</p>
+                                <p className="font-medium">
+                                  {isMileageType(item.type) ? (
+                                    <>
+                                      {t('expense.transportation.type.km_pauschale')}
+                                      {item.mileage && ` (${item.mileage} KM)`}
+                                    </>
+                                  ) : (
+                                    item.type && t(`expense.transportation.type.${item.type}`)
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">{t('expense.transportation.totalAmount.label')}</p>
+                                <p className="font-medium">{item.totalAmount ? formatEuro(parseFloat(item.totalAmount), false) : '-'}</p>
+                              </div>
+                            </div>
+                            {/* 차량 번호판 표시 */}
+                            {isMileageType(item.type) && item.licensePlate && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">{t('expense.transportation.licensePlate.label')}</p>
+                                <p className="font-medium">{item.licensePlate}</p>
                               </div>
                             )}
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('expense.transportation.totalAmount.label') || '금액'}</p>
-                              <p className="font-medium">{item.amount ? formatEuro(parseFloat(item.amount), false) : '-'}</p>
-                            </div>
                           </div>
-                          {item.type === 'km_pauschale' && item.licensePlate && (
-                            <div className="mt-2">
-                              <p className="text-sm text-muted-foreground">{t('expense.transportation.licensePlate.label') || '번호판'}</p>
-                              <p className="font-medium">{item.licensePlate}</p>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -1014,7 +1060,7 @@ export default function BusinessExpenseSummaryPage() {
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">{t('expense.entertainment.totalAmount.label') || '금액'}</p>
-                              <p className="font-medium">{item.amount ? formatEuro(parseFloat(item.amount), false) : '-'}</p>
+                              <p className="font-medium">{item.totalAmount ? formatEuro(parseFloat(item.totalAmount), false) : '-'}</p>
                             </div>
                           </div>
                         </div>
@@ -1128,6 +1174,59 @@ export default function BusinessExpenseSummaryPage() {
                 </CardContent>
               </Card>
               
+              {/* 기타 금액 정보 요약 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('expense.miscellaneous.title') || '기타 금액 정보'}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {formData.miscellaneous && formData.miscellaneous.length > 0 ? (
+                    <div className="space-y-4">
+                      {formData.miscellaneous.map((item, index) => (
+                        <div key={index} className="border p-4 rounded-md">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.miscellaneous.date.label')}</p>
+                              <p className="font-medium">
+                                {item.date ? dateFormat(item.date, 'PPP') : '-'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.miscellaneous.type.label')}</p>
+                              <p className="font-medium">
+                                {item.type ? t(`expense.miscellaneous.type.${item.type}`) : '-'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.paidBy.label')}</p>
+                              <p className="font-medium">
+                                {item.paidBy ? t(`expense.paidBy.${item.paidBy}`) : '-'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-2 grid grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.miscellaneous.companyName.label')}</p>
+                              <p className="font-medium">{item.companyName || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.miscellaneous.vat.label')}</p>
+                              <p className="font-medium">{item.vat ? formatEuro(parseFloat(item.vat), false) : '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">{t('expense.miscellaneous.totalAmount.label')}</p>
+                              <p className="font-medium">{item.totalAmount ? formatEuro(parseFloat(item.totalAmount), false) : '-'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">{t('expense.summary.noMiscellaneous') || '기타 금액 정보가 없습니다.'}</p>
+                  )}
+                </CardContent>
+              </Card>
+              
               {/* 총 비용 요약 */}
               <Card>
                 <CardHeader>
@@ -1139,7 +1238,7 @@ export default function BusinessExpenseSummaryPage() {
                       <div>
                         <p className="text-sm text-muted-foreground">{t('expense.summary.transportationTotal')}</p>
                         <p className="font-medium">
-                          {formatEuro(formData.transportation.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}
+                          {formatEuro(formData.transportation.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0))}
                         </p>
                       </div>
                       <div>
@@ -1151,7 +1250,16 @@ export default function BusinessExpenseSummaryPage() {
                       <div>
                         <p className="text-sm text-muted-foreground">{t('expense.summary.entertainmentTotal')}</p>
                         <p className="font-medium">
-                          {formatEuro(formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}
+                          {formatEuro(formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0))}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t('expense.summary.miscellaneousTotal')}</p>
+                        <p className="font-medium">
+                          {formatEuro(formData.miscellaneous.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0))}
                         </p>
                       </div>
                     </div>
@@ -1174,9 +1282,10 @@ export default function BusinessExpenseSummaryPage() {
                         <p className="text-lg font-semibold">{t('expense.summary.grandTotal')}</p>
                         <p className="text-xl font-bold">
                           {formatEuro(
-                            formData.transportation.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) +
+                            formData.transportation.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0) +
                             formData.accommodations.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0) +
-                            formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
+                            formData.entertainment.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0) +
+                            formData.miscellaneous.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0)
                           )}
                         </p>
                       </div>
