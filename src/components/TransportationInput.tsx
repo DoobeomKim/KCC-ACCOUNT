@@ -57,7 +57,6 @@ export const TransportationInput = ({ transportation, updateTransportation, remo
                   <SelectItem value="taxi">{t("expense.transportation.type.taxi")}</SelectItem>
                   <SelectItem value="fuel">{t("expense.transportation.type.fuel")}</SelectItem>
                   <SelectItem value="rental">{t("expense.transportation.type.rental")}</SelectItem>
-                  <SelectItem value="mileage">{t("expense.transportation.type.mileage")}</SelectItem>
                   <SelectItem value="km_pauschale">{t("expense.transportation.type.km_pauschale")}</SelectItem>
                 </SelectContent>
               </Select>

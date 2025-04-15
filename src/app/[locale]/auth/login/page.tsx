@@ -90,8 +90,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+    <main className="fixed inset-0 flex items-center justify-center bg-background">
+      <Card className="w-[min(100%-2rem,420px)] mx-auto">
         <CardHeader>
           <CardTitle>{t('title')}</CardTitle>
         </CardHeader>
@@ -134,6 +134,6 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </main>
   )
 } 

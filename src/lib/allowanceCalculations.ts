@@ -130,10 +130,6 @@ export const calculateDailyAllowance = async (
   // 3. 국제출장 & 부분식대 적용 (전일 식대는 제외)
   if (!isFullDay && isInternational && isNotGermany) {
     baseAmount = baseAmount * 0.8;
-    console.log('Debug - After International Reduction:', {
-      baseAmount,
-      reduction: '20%'
-    });
   }
   
   // 4. 식사 제공에 따른 차감
@@ -150,12 +146,6 @@ export const calculateDailyAllowance = async (
       deduction += baseAmount * 0.4;
     }
   }
-
-  console.log('Debug - Meal Deductions:', {
-    baseAmount,
-    deduction,
-    entertainmentExpense
-  });
   
   const finalAmount = Math.max(0, baseAmount - deduction);
   

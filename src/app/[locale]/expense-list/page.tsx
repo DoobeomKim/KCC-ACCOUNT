@@ -58,6 +58,8 @@ interface ExpenseItem {
   meal_allowance: number;
   grand_total: number;
   created_at: string;
+  meal_option?: boolean;
+  calculated_totals?: any;
 }
 
 export default function ExpenseListPage() {
@@ -73,9 +75,9 @@ export default function ExpenseListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [stats, setStats] = useState({
     total: 0,
-    new: 0,
-    active: 0,
-    activities: 0
+    newThisMonth: 0,
+    newLastWeek: 0,
+    monthlyTotal: 0
   })
   
   // 사용자 권한 확인
@@ -157,19 +159,21 @@ export default function ExpenseListPage() {
   // 통계 정보 업데이트
   const updateStats = (data: ExpenseItem[]) => {
     const total = data.length
-    const newItems = data.filter(item => {
-      const createdDate = new Date(item.created_at)
-      const oneWeekAgo = new Date()
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-      return createdDate >= oneWeekAgo
-    }).length
-    const active = data.filter(item => item.status === 'submitted' || item.status === 'approved').length
-    
+    const now = new Date()
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    const newThisMonth = data.filter(item => new Date(item.created_at) >= firstDayOfMonth).length
+    const newLastWeek = data.filter(item => new Date(item.created_at) >= oneWeekAgo).length
+    const monthlyTotal = data
+      .filter(item => new Date(item.created_at) >= firstDayOfMonth)
+      .reduce((sum, item) => sum + item.grand_total, 0)
+
     setStats({
       total,
-      new: newItems,
-      active,
-      activities: Math.floor(total * 0.8) // 활동 수는 임의로 계산 (실제로는 다른 방식으로 계산할 수 있음)
+      newThisMonth,
+      newLastWeek,
+      monthlyTotal
     })
   }
   
@@ -201,8 +205,146 @@ export default function ExpenseListPage() {
   }
   
   // 행 클릭 핸들러
-  const handleRowClick = (id: string) => {
-    router.push(`/${locale}/business-expense/summary?id=${id}`)
+  const handleRowClick = async (id: string) => {
+    try {
+      // 1. 데이터 로딩 중 표시
+      toast.loading('데이터를 불러오는 중...');
+      
+      // 2. DB에서 필요한 모든 데이터 가져오기
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('business_expenses')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (expenseError) throw expenseError;
+      
+      // 3. 방문 정보 가져오기
+      const { data: visitsData, error: visitsError } = await supabase
+        .from('expense_visits')
+        .select('*')
+        .eq('expense_id', id);
+        
+      if (visitsError) throw visitsError;
+      
+      // 4. 교통비 정보 가져오기
+      const { data: transportationData, error: transportationError } = await supabase
+        .from('expense_transportation')
+        .select('*')
+        .eq('expense_id', id);
+        
+      if (transportationError) throw transportationError;
+      
+      // 5. 숙박비 정보 가져오기
+      const { data: accommodationData, error: accommodationError } = await supabase
+        .from('expense_accommodations')
+        .select('*')
+        .eq('expense_id', id);
+        
+      if (accommodationError) throw accommodationError;
+      
+      // 6. 접대비 정보 가져오기
+      const { data: entertainmentData, error: entertainmentError } = await supabase
+        .from('expense_entertainment')
+        .select('*')
+        .eq('expense_id', id);
+        
+      if (entertainmentError) throw entertainmentError;
+      
+      // 7. 기타 비용 정보 가져오기
+      const { data: miscellaneousData, error: miscellaneousError } = await supabase
+        .from('expense_miscellaneous')
+        .select('*')
+        .eq('expense_id', id);
+        
+      if (miscellaneousError) throw miscellaneousError;
+      
+      // 8. 데이터 통합하여 세션 스토리지에 저장할 객체 구성
+      const formData = {
+        name: expenseData.name || '',
+        startDate: expenseData.start_date ? new Date(expenseData.start_date) : new Date(),
+        endDate: expenseData.end_date ? new Date(expenseData.end_date) : new Date(),
+        startTime: expenseData.start_time || '',
+        endTime: expenseData.end_time || '',
+        purpose: expenseData.purpose || '',
+        projectName: expenseData.project_name || '',
+        projectNumber: expenseData.project_number || '',
+        visits: visitsData.map(visit => ({
+          date: visit.date ? new Date(visit.date) : undefined,
+          companyName: visit.company_name || '',
+          city: visit.city || '',
+          description: visit.description || '',
+          isExpanded: false,
+          datePickerOpen: false
+        })) || [],
+        transportation: transportationData.map(item => ({
+          date: item.date ? new Date(item.date) : undefined,
+          type: item.type === 'km_pauschale' ? 'km_pauschale' : item.type,
+          country: item.country || '',
+          companyName: item.company_name || '',
+          paidBy: item.paid_by,
+          vat: item.vat ? String(item.vat) : '',
+          totalAmount: item.amount ? String(item.amount) : '',
+          mileage: item.mileage ? String(item.mileage) : '',
+          licensePlate: item.license_plate || '',
+          isExpanded: false,
+          datePickerOpen: false
+        })) || [],
+        accommodation: accommodationData.map(item => ({
+          startDate: item.start_date ? new Date(item.start_date) : undefined,
+          endDate: item.end_date ? new Date(item.end_date) : undefined,
+          type: item.type,
+          country: item.country || '',
+          hotelName: item.hotel_name || '',
+          paidBy: item.paid_by,
+          vat: item.vat ? String(item.vat) : '',
+          totalAmount: item.total_amount ? String(item.total_amount) : '',
+          isExpanded: false
+        })) || [],
+        entertainment: entertainmentData.map(item => ({
+          date: item.date ? new Date(item.date) : undefined,
+          type: item.type,
+          country: item.country || '',
+          companyName: item.company_name || '',
+          paidBy: item.paid_by,
+          vat: item.vat ? String(item.vat) : '',
+          totalAmount: item.amount ? String(item.amount) : '',
+          isExpanded: false,
+          datePickerOpen: false
+        })) || [],
+        miscellaneous: miscellaneousData.map(item => ({
+          date: item.date ? new Date(item.date) : undefined,
+          type: item.type,
+          country: item.country || '',
+          companyName: item.company_name || '',
+          paidBy: item.paid_by,
+          vat: item.vat ? String(item.vat) : '',
+          totalAmount: item.amount ? String(item.amount) : '',
+          description: item.description || '',
+          isExpanded: false,
+          datePickerOpen: false
+        })) || [],
+        mealOption: expenseData.meal_option || false,
+        calculatedTotals: expenseData.calculated_totals || {}
+      };
+      
+      // 9. 세션 스토리지에 데이터 저장
+      sessionStorage.setItem('expenseFormData', JSON.stringify(formData));
+      sessionStorage.setItem('expenseEditId', id);
+      
+      toast.dismiss();
+      toast.success('데이터가 로드되었습니다.');
+      
+      // 10. 요약 페이지로 이동
+      router.push(`/${locale}/business-expense/summary?id=${id}`);
+    } catch (error) {
+      console.error('데이터 로딩 오류:', error);
+      toast.dismiss();
+      toast.error('데이터 로딩 중 오류가 발생했습니다.');
+      
+      // 오류 발생 시 세션 데이터 없이 이동
+      router.push(`/${locale}/business-expense/summary?id=${id}`);
+    }
   }
   
   // PDF 저장 핸들러
@@ -258,6 +400,31 @@ export default function ExpenseListPage() {
     }
   }
 
+  // 총 금액 계산 헬퍼 함수
+  const calculateTotalFromJson = (calculatedTotals: any): string => {
+    if (!calculatedTotals) return formatEuro(0, false);
+    
+    try {
+      // calculatedTotals이 문자열인 경우 파싱
+      const totals = typeof calculatedTotals === 'string' 
+        ? JSON.parse(calculatedTotals) 
+        : calculatedTotals;
+      
+      const transportation = totals.transportation?.total || 0;
+      const accommodation = totals.accommodation?.total || 0;
+      const entertainment = totals.entertainment?.total || 0;
+      const miscellaneous = totals.miscellaneous?.total || 0;
+      const mealAllowance = totals.mealAllowance?.amount || 0;
+      
+      const total = transportation + accommodation + entertainment + miscellaneous + mealAllowance;
+      
+      return formatEuro(total, false);
+    } catch (error) {
+      console.error('Error calculating total:', error);
+      return formatEuro(0, false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
@@ -285,51 +452,41 @@ export default function ExpenseListPage() {
           </div>
 
           {/* 통계 카드 섹션 */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">전체 기록</span>
-                </div>
-                <div className="mt-2">
-                  <span className="text-2xl font-bold">{stats.total}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">최근 7일 신규</span>
-                </div>
-                <div className="mt-2">
-                  <span className="text-2xl font-bold">{stats.new}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">활성 기록</span>
-                </div>
-                <div className="mt-2">
-                  <span className="text-2xl font-bold">{stats.active}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">활동</span>
-                </div>
-                <div className="mt-2">
-                  <span className="text-2xl font-bold">{stats.activities}</span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="bg-white shadow-sm">
+                <CardContent className="py-1.5 px-3.5">
+                  <div className="space-y-0">
+                    <p className="text-xs font-medium text-muted-foreground">전체 기록</p>
+                    <p className="text-lg font-bold leading-none mt-0.5">{stats.total}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm">
+                <CardContent className="py-1.5 px-3.5">
+                  <div className="space-y-0">
+                    <p className="text-xs font-medium text-muted-foreground">이번달 신규</p>
+                    <p className="text-lg font-bold leading-none mt-0.5">{stats.newThisMonth}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm">
+                <CardContent className="py-1.5 px-3.5">
+                  <div className="space-y-0">
+                    <p className="text-xs font-medium text-muted-foreground">이번달 총 금액</p>
+                    <p className="text-lg font-bold leading-none mt-0.5">{formatEuro(stats.monthlyTotal)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm">
+                <CardContent className="py-1.5 px-3.5">
+                  <div className="space-y-0">
+                    <p className="text-xs font-medium text-muted-foreground">최근 7일 신규</p>
+                    <p className="text-lg font-bold leading-none mt-0.5">{stats.newLastWeek}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* 필터 및 검색 섹션 */}
@@ -406,7 +563,7 @@ export default function ExpenseListPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatEuro(expense.grand_total)}
+                        {calculateTotalFromJson(expense.calculated_totals)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">

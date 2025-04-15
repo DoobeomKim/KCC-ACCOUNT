@@ -38,6 +38,7 @@ import { DailyAllowanceTable } from './DailyAllowanceTable'
 import { useAllowanceRates } from '@/hooks/useAllowanceRates'
 import { getCountryCode } from '@/lib/api/country'
 import { formatEuro } from '@/lib/utils'
+import { DailyAllowance } from '@/types/expense'
 
 interface EntertainmentExpense {
   date: string
@@ -62,6 +63,8 @@ interface MealAllowanceInfo {
   isLastDay?: boolean
   startTime?: string
   endTime?: string
+  departureName?: string
+  arrivalName?: string
 }
 
 interface MealAllowanceInfoProps {
@@ -170,50 +173,6 @@ interface DailySchedule {
   }[];
 }
 
-const calculateDailyAllowance = (schedules: any[], entertainmentExpense: any) => {
-  // 배열이 아니거나 빈 배열이면 0 반환
-  if (!Array.isArray(schedules) || schedules.length === 0) {
-    return 0;
-  }
-
-  // 기준 일정 찾기
-  const [firstSchedule, ...otherSchedules] = schedules;
-  
-  // 첫 번째 일정이 없거나 tripType이 없으면 0 반환
-  if (!firstSchedule || !firstSchedule.tripType) {
-    return 0;
-  }
-
-  const otherSchedulesHoursSum = otherSchedules.reduce(
-    (sum, schedule) => sum + (schedule.stayHours || 0), 0
-  );
-  
-  const baseSchedule = otherSchedulesHoursSum >= 8 
-    ? schedules[schedules.length - 1] 
-    : firstSchedule;
-  
-  // 체류 시간에 따른 기본 식대 계산
-  const hasInternational = schedules.some(s => s.tripType === 'international');
-  const hasStayOver = schedules.some(s => s.dayType === '숙박일');
-  
-  let baseAmount = 0;
-  if (hasStayOver) {
-    baseAmount = 24; // 전일 식대
-  } else if (baseSchedule.stayHours >= 8) {
-    baseAmount = hasInternational ? 24 : 14; // 국외는 24유로, 국내는 14유로
-  }
-  
-  // 접대비 차감
-  if (entertainmentExpense) {
-    if (entertainmentExpense.breakfast) baseAmount *= 0.8;
-    if (entertainmentExpense.lunch) baseAmount *= 0.8;
-    if (entertainmentExpense.dinner) baseAmount *= 0.8;
-  }
-  
-  return baseAmount;
-};
-
-// 유틸리티 함수들을 컴포넌트 외부로 이동
 const calculateStayHoursForDate = (
   date: string, 
   schedules: MealAllowanceInfo[], 
@@ -246,6 +205,7 @@ const calculateStayHoursForDate = (
     const [hours, minutes] = timeStr.split(':').map(Number);
     // 시작 시간부터 자정(24:00)까지의 시간 계산
     const hoursFromStart = 24 - hours - (minutes / 60);
+    console.log(`첫째날 체류시간 계산: ${hoursFromStart}시간 (시작시간: ${timeStr})`);
     return Math.max(0, Math.min(24, hoursFromStart));
   }
   
@@ -256,11 +216,157 @@ const calculateStayHoursForDate = (
     const [hours, minutes] = timeStr.split(':').map(Number);
     // 자정(00:00)부터 종료 시간까지의 시간 계산
     const hoursUntilEnd = hours + (minutes / 60);
+    console.log(`마지막날 체류시간 계산: ${hoursUntilEnd}시간 (종료시간: ${timeStr})`);
     return Math.max(0, Math.min(24, hoursUntilEnd));
   }
   
   // 중간날인 경우
+  console.log(`중간날 체류시간: 24시간`);
   return 24;
+};
+
+const calculateDailyAllowances = (
+  mealAllowanceInfo: { [key: string]: any[] },
+  tripStartDate: Date,
+  tripEndDate: Date,
+  startTime: string | undefined,
+  endTime: string | undefined,
+  entertainmentExpenses: any[]
+): DailyAllowance[] => {
+  if (!mealAllowanceInfo || !tripStartDate || !tripEndDate) return [];
+
+  return Object.entries(mealAllowanceInfo).map(([date, schedules]) => {
+    if (!Array.isArray(schedules) || schedules.length === 0) {
+      return {
+        date,
+        stayHours: 0,
+        baseCountry: 'Deutschland',
+        allowance: 0,
+        entertainment: {
+          breakfast: false,
+          lunch: false,
+          dinner: false
+        }
+      };
+    }
+
+    const lastSchedule = schedules[schedules.length - 1];
+    const isDomestic = lastSchedule.tripType === 'domestic';
+    
+    // 국가명 설정
+    let baseCountry;
+    const countryCode = isDomestic ? 'DE' : (lastSchedule.arrivalCountry || 'DE');
+    baseCountry = ratesCache[countryCode]?.countryName || countryCode;
+
+    // 체류 시간 계산
+    const stayHours = calculateStayHoursForDate(
+      date,
+      schedules,
+      tripStartDate,
+      tripEndDate,
+      startTime,
+      endTime
+    );
+
+    console.log(`=== ${date} 일자 계산 ===`);
+    console.log('체류시간:', stayHours);
+    console.log('국내/국외:', isDomestic ? '국내' : '국외');
+    console.log('기준국가:', baseCountry);
+
+    // 해당 날짜의 식사 제공 여부 확인
+    const entertainment = entertainmentExpenses.find(exp => exp.date === date) || {
+      breakfast: false,
+      lunch: false,
+      dinner: false
+    };
+
+    console.log('식사 제공:', entertainment);
+
+    // 출발지/도착지 이름 설정
+    const departureName = lastSchedule.departureName || getLocationName(lastSchedule.departureCountry, lastSchedule.departureCity);
+    const arrivalName = lastSchedule.arrivalName || getLocationName(lastSchedule.arrivalCountry, lastSchedule.arrivalCity);
+
+    // 체류시간이 8시간 미만이면 0유로
+    if (stayHours < 8) {
+      console.log('체류시간 8시간 미만: 0유로');
+      return {
+        date,
+        stayHours,
+        baseCountry,
+        allowance: 0,
+        entertainment: {
+          breakfast: entertainment.breakfast || false,
+          lunch: entertainment.lunch || false,
+          dinner: entertainment.dinner || false
+        },
+        departureName,
+        arrivalName
+      };
+    }
+
+    // 국가별 요율에 따른 식대 계산
+    let countryRates = ratesCache[countryCode] || {
+      countryCode: 'DE',
+      fullDayAmount: 28,
+      partialDayAmount: 14
+    };
+
+    console.log('국가별 요율:', countryRates);
+
+    const isFullDay = stayHours >= 24;
+    let baseAmount;
+    
+    if (isFullDay) {
+      // 24시간 이상 체류 시 해당 국가의 전일 요율 적용
+      baseAmount = countryRates.fullDayAmount;
+      console.log('전일 요율 적용:', baseAmount);
+    } else {
+      // 8시간 이상 24시간 미만 체류
+      if (isDomestic || countryCode === 'DE') {
+        // 국내인 경우 부분일 요율의 60% 적용
+        baseAmount = countryRates.partialDayAmount * 0.6;
+        console.log('국내 부분 요율 적용 (60%):', baseAmount);
+      } else {
+        // 국외인 경우 해당 국가의 부분일 요율 그대로 적용
+        baseAmount = countryRates.partialDayAmount;
+        console.log('국외 부분 요율 적용:', baseAmount);
+      }
+    }
+
+    // 식사 제공에 따른 차감
+    let mealDeduction = 0;
+    const mealDeductionBase = isFullDay ? countryRates.fullDayAmount : countryRates.partialDayAmount;
+
+    if (entertainment.breakfast) {
+      mealDeduction += mealDeductionBase * 0.2;
+      console.log('아침 식사 차감:', mealDeductionBase * 0.2);
+    }
+    if (entertainment.lunch) {
+      mealDeduction += mealDeductionBase * 0.4;
+      console.log('점심 식사 차감:', mealDeductionBase * 0.4);
+    }
+    if (entertainment.dinner) {
+      mealDeduction += mealDeductionBase * 0.4;
+      console.log('저녁 식사 차감:', mealDeductionBase * 0.4);
+    }
+
+    const allowance = Math.max(0, baseAmount - mealDeduction);
+    console.log('최종 식대:', allowance);
+
+    return {
+      date,
+      stayHours,
+      baseCountry,
+      allowance,
+      entertainment: {
+        breakfast: entertainment.breakfast || false,
+        lunch: entertainment.lunch || false,
+        dinner: entertainment.dinner || false
+      },
+      departureName,
+      arrivalName
+    };
+  });
 };
 
 const getBaseCountry = (info: MealAllowanceInfo): string => {
@@ -283,6 +389,30 @@ const calculateMealAllowance = (info: MealAllowanceInfo): number => {
   return baseAmount;
 };
 
+interface RatesCache {
+  [key: string]: {
+    countryCode: string;
+    fullDayAmount: number;
+    partialDayAmount: number;
+    countryName?: string;
+  };
+}
+
+const ratesCache: RatesCache = {
+  'DE': {
+    countryCode: 'DE',
+    fullDayAmount: 28,
+    partialDayAmount: 14,
+    countryName: 'Deutschland'
+  }
+  // 다른 국가들의 요율 정보를 여기에 추가할 수 있습니다
+};
+
+const getLocationName = (country: string, city: string): string => {
+  if (!country || !city) return '';
+  return `${city}, ${country}`;
+};
+
 export default function MealAllowanceInfo({ 
   mealAllowanceInfo = {},
   onChange, 
@@ -298,6 +428,43 @@ export default function MealAllowanceInfo({
   const { ratesCache, fetchRateForCountry } = useAllowanceRates();
   const [loadingCountries, setLoadingCountries] = useState<Set<string>>(new Set());
   const prevTotalRef = useRef<number>(0);
+  const [dailyAllowances, setDailyAllowances] = useState<DailyAllowance[]>([]);
+  const hasLoggedRef = useRef(false);
+
+  // 디버깅 로그를 useEffect로 이동
+  useEffect(() => {
+    if (!hasLoggedRef.current) {
+      console.log('=== MealAllowanceInfo Debug ===');
+      console.log('Input Props:', {
+        mealAllowanceInfo,
+        tripStartDate,
+        tripEndDate,
+        entertainmentExpenses,
+        startTime,
+        endTime,
+        isAllowanceEnabled
+      });
+      hasLoggedRef.current = true;
+    }
+  }, [mealAllowanceInfo, tripStartDate, tripEndDate, entertainmentExpenses, startTime, endTime, isAllowanceEnabled]);
+
+  // 국가/도시명 변환 로직
+  const getLocationName = useCallback((countryCode?: string, city?: string) => {
+    // 도시가 입력된 경우
+    if (city) {
+      if (countryCode === 'DE' || !countryCode) {
+        return `국내(${city})`
+      }
+      return city
+    }
+    
+    // 국가 코드가 입력된 경우
+    if (countryCode && countryCode.length === 2) {
+      return ratesCache[countryCode]?.countryName || countryCode
+    }
+
+    return undefined
+  }, [ratesCache])
 
   // 국가 코드 캐시
   const countryCodesCache = useMemo(() => {
@@ -422,7 +589,7 @@ export default function MealAllowanceInfo({
       );
 
       // 기준 국가 설정
-      const baseCountry = isDomestic ? '국내' : lastSchedule.arrivalCountry || '-';
+      const baseCountry = isDomestic ? 'DE' : lastSchedule.arrivalCountry || 'DE';
       values.baseCountries[date] = baseCountry;
 
       // 접대비 정보 설정
@@ -440,16 +607,14 @@ export default function MealAllowanceInfo({
       }
 
       // 국가별 요율에 따른 식대 계산
-      let countryRates;
-      if (isDomestic) {
-        countryRates = ratesCache['DE'];
-      } else {
-        // 국외인 경우, 해당 국가의 요율이 없으면 0원 처리
-        countryRates = baseCountry && ratesCache[baseCountry];
-        if (!countryRates) {
-          values.dailyAllowances[date] = 0;
-          continue;
-        }
+      let countryRates = ratesCache[baseCountry];
+
+      if (!countryRates) {
+        countryRates = {
+          countryCode: 'DE',
+          fullDayAmount: 28,
+          partialDayAmount: 14
+        };
       }
 
       const isFullDay = values.stayHours[date] >= 24;
@@ -489,6 +654,57 @@ export default function MealAllowanceInfo({
     return values;
   }, [mealAllowanceInfo, entertainmentExpenses, tripStartDate, tripEndDate, startTime, endTime, ratesCache]);
 
+  // DailyAllowance 데이터 계산 및 저장
+  useEffect(() => {
+    if (!mealAllowanceInfo || !tripStartDate || !tripEndDate) {
+      console.log('Required props missing:', { mealAllowanceInfo, tripStartDate, tripEndDate });
+      return;
+    }
+
+    // calculatedValues에서 dailyAllowances 데이터 가져오기
+    const newDailyAllowances = Object.entries(calculatedValues.dailyAllowances).map(([date, amount]) => {
+      const schedules = mealAllowanceInfo[date] || [];
+      const lastSchedule = schedules[schedules.length - 1] || {};
+      const isDomestic = lastSchedule.tripType === 'domestic';
+      const countryCode = isDomestic ? 'DE' : (lastSchedule.arrivalCountry || 'DE');
+      const baseCountry = ratesCache[countryCode]?.countryName || countryCode;
+      const entertainment = calculatedValues.entertainmentInfo[date] || {
+        breakfast: false,
+        lunch: false,
+        dinner: false
+      };
+
+      return {
+        date,
+        stayHours: calculatedValues.stayHours[date] || 0,
+        baseCountry,
+        allowance: amount,
+        entertainment,
+        departureName: lastSchedule.departureName || getLocationName(lastSchedule.departureCountry, lastSchedule.departureCity),
+        arrivalName: lastSchedule.arrivalName || getLocationName(lastSchedule.arrivalCountry, lastSchedule.arrivalCity)
+      };
+    });
+
+    console.log('Using calculated values for daily allowances:', newDailyAllowances);
+
+    setDailyAllowances(newDailyAllowances);
+
+    // 세션 스토리지에 저장
+    const savedData = sessionStorage.getItem('expenseFormData');
+    console.log('Current session storage data:', savedData);
+    
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      const updatedData = {
+        ...parsedData,
+        dailyAllowances: newDailyAllowances,
+        totalMealAllowance: newDailyAllowances.reduce((sum, allowance) => sum + (allowance.allowance || 0), 0)
+      };
+      console.log('Updating session storage with:', updatedData);
+      sessionStorage.setItem('expenseFormData', JSON.stringify(updatedData));
+    }
+  }, [mealAllowanceInfo, tripStartDate, tripEndDate, calculatedValues, ratesCache]);
+
   // 총액 계산 메모이제이션 - 식비 지급 여부 반영
   const totalAmount = useMemo(() => {
     if (!isAllowanceEnabled) return 0;
@@ -502,11 +718,6 @@ export default function MealAllowanceInfo({
       onTotalAllowanceChange(totalAmount);
     }
   }, [totalAmount, onTotalAllowanceChange]);
-
-  // 식비 지급이 비활성화되어 있으면 UI를 숨김
-  if (!isAllowanceEnabled) {
-    return null;
-  }
 
   // 특정 날짜에 일정 추가
   const handleAddSchedule = (date: string) => {
@@ -551,46 +762,53 @@ export default function MealAllowanceInfo({
   }
 
   // 일정 정보 변경
-  const handleScheduleChange = (date: string, scheduleIndex: number, field: keyof MealAllowanceInfo, value: any) => {
-    const newInfo = { ...mealAllowanceInfo };
-    
-    if (!newInfo[date]) {
-      newInfo[date] = [];
+  const handleScheduleChange = useCallback((date: string, index: number, field: keyof MealAllowanceInfo, value: any) => {
+    const newInfo = { ...mealAllowanceInfo }
+    if (!Array.isArray(newInfo[date])) {
+      newInfo[date] = []
     }
     
-    // tripType이 변경되는 경우 관련 필드 초기화
-    if (field === 'tripType') {
-      newInfo[date][scheduleIndex] = {
-        ...newInfo[date][scheduleIndex],
-        date,
-        tripType: value,
-        departureCountry: '',
-        departureCity: '',
-        arrivalCountry: '',
-        arrivalCity: '',
-      };
-            } else {
-      if (!newInfo[date][scheduleIndex]) {
-        newInfo[date][scheduleIndex] = {
-          date,
-          tripType: 'domestic',
-          departureCountry: '',
-          departureCity: '',
-          arrivalCountry: '',
-          arrivalCity: '',
-        };
+    const currentSchedule = newInfo[date][index] || {}
+    const schedule = {
+      ...currentSchedule,
+      [field]: value,
+    } as MealAllowanceInfo
+
+    // 국가/도시명 업데이트
+    if (['departureCountry', 'departureCity', 'arrivalCountry', 'arrivalCity', 'tripType'].includes(field)) {
+      // 출발지 정보가 변경된 경우
+      if (field === 'departureCountry' || field === 'departureCity') {
+        const updatedDepartureCountry = field === 'departureCountry' ? value : schedule.departureCountry
+        const updatedDepartureCity = field === 'departureCity' ? value : schedule.departureCity
+        schedule.departureName = getLocationName(updatedDepartureCountry, updatedDepartureCity)
       }
-      newInfo[date][scheduleIndex] = {
-        ...newInfo[date][scheduleIndex],
-        [field]: value
-      };
+      
+      // tripType이 변경되었거나 도착지 정보가 변경된 경우 arrivalName 업데이트
+      if (field === 'tripType' || field === 'arrivalCountry' || field === 'arrivalCity') {
+        const updatedArrivalCountry = field === 'arrivalCountry' ? value : schedule.arrivalCountry
+        const updatedArrivalCity = field === 'arrivalCity' ? value : schedule.arrivalCity
+        const updatedTripType = field === 'tripType' ? value : schedule.tripType
+        
+        // tripType에 따라 arrivalName 설정
+        if (updatedTripType === 'domestic') {
+          schedule.arrivalName = updatedArrivalCity ? `국내(${updatedArrivalCity})` : 'Deutschland'
+        } else {
+          schedule.arrivalName = getLocationName(updatedArrivalCountry, updatedArrivalCity)
+        }
+      }
+
+      // 국가 코드가 변경된 경우 요율 정보 가져오기
+      if ((field === 'departureCountry' || field === 'arrivalCountry') && value?.length === 2) {
+        fetchRateForCountry(value)
+      }
     }
-    
-    onChange(newInfo);
-  };
+
+    newInfo[date][index] = schedule
+    onChange(newInfo)
+  }, [mealAllowanceInfo, onChange, getLocationName, fetchRateForCountry])
 
   // 해당 날짜의 접대비 정보를 가져오는 함수
-  const getEntertainmentExpenseForDate = (date: string) => {
+  const getEntertainmentExpenseForDate = useCallback((date: string) => {
     // entertainmentExpenses가 없거나 빈 배열이면 기본값 반환
     if (!entertainmentExpenses || entertainmentExpenses.length === 0) {
       return {
@@ -618,10 +836,10 @@ export default function MealAllowanceInfo({
       lunch: dayExpenses.some(expense => expense.lunch),
       dinner: dayExpenses.some(expense => expense.dinner)
     };
-  };
+  }, [entertainmentExpenses]);
 
   // 유틸리티 함수들
-  const calculateDuration = (startDate: Date | undefined, endDate: Date | undefined, startTime: string, endTime: string): string => {
+  const calculateDuration = useCallback((startDate: Date | undefined, endDate: Date | undefined, startTime: string, endTime: string): string => {
     if (!startDate || !endDate || !startTime || !endTime) return "-";
     
     const start = dateUtils.combineDateAndTime(startDate, startTime);
@@ -629,17 +847,17 @@ export default function MealAllowanceInfo({
     const hours = differenceInHours(end, start);
     
     return `${hours}`;
-  };
+  }, []);
 
-  const isArrivalDay = (info: MealAllowanceInfo): boolean => {
+  const isArrivalDay = useCallback((info: MealAllowanceInfo): boolean => {
     return info.dayType === '도착일';
-  };
+  }, []);
 
-  const handleArrivalDayChange = (index: number, isArrival: boolean) => {
+  const handleArrivalDayChange = useCallback((index: number, isArrival: boolean) => {
     // 도착일 상태 변경 로직
-  };
+  }, []);
 
-  const handleMealChange = (date: string, index: number, meal: 'breakfast' | 'lunch' | 'dinner', value: boolean) => {
+  const handleMealChange = useCallback((date: string, index: number, meal: 'breakfast' | 'lunch' | 'dinner', value: boolean) => {
     const newInfo = { ...mealAllowanceInfo };
     if (!newInfo[date]) {
       newInfo[date] = [];
@@ -659,9 +877,9 @@ export default function MealAllowanceInfo({
       [meal]: value
     };
     onChange(newInfo);
-  };
+  }, [mealAllowanceInfo, onChange]);
 
-  const calculateStayHours = (info: MealAllowanceInfo): number => {
+  const calculateStayHours = useCallback((info: MealAllowanceInfo): number => {
     if (!info.tripType) return 0;
     
     let hours = 0;
@@ -672,18 +890,20 @@ export default function MealAllowanceInfo({
     }
     
     return hours;
-  };
+  }, []);
 
+  // 식비 지급이 비활성화되어 있으면 UI를 숨김
+  // (null 반환 대신 조건부 스타일로 처리)
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" style={{ display: isAllowanceEnabled ? 'block' : 'none' }}>
       {/* 상단 설명 */}
       <div className="bg-muted/50 p-4 rounded-lg flex items-start gap-2">
         <Info className="w-5 h-5 text-blue-500 mt-0.5" />
         <p className="text-sm text-muted-foreground">
           각 날짜별로 이동 일정을 입력하세요. 필요한 경우 일정을 추가하거나 삭제할 수 있습니다.
         </p>
-            </div>
-            
+      </div>
+      
       {/* 날짜별 일정 입력 */}
       <div className="border rounded-lg overflow-hidden">
         <Table>

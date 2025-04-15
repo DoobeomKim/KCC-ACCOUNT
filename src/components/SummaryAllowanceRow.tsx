@@ -1,11 +1,12 @@
-import { memo, useMemo, useEffect } from 'react'
+import { memo, useMemo, useCallback, useEffect } from 'react'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { formatEuro } from '@/lib/utils'
 import { dateUtils } from '@/lib/dateUtils'
 import { MealAllowanceInfo } from '@/types/expense'
 import { useAllowanceRates } from '@/hooks/useAllowanceRates'
+import { format } from 'date-fns'
 
-// 주요 국가 매핑 (기본값으로 사용)
+// 주요 국가 매핑
 const COUNTRY_NAMES: { [key: string]: string } = {
   'DE': 'Germany',
   'JP': 'Japan',
@@ -24,7 +25,7 @@ const COUNTRY_NAMES: { [key: string]: string } = {
   'ZA': 'South Africa'
 };
 
-interface DailyAllowanceRowProps {
+interface SummaryAllowanceRowProps {
   date: string
   schedules: MealAllowanceInfo[]
   stayHours: number
@@ -35,45 +36,32 @@ interface DailyAllowanceRowProps {
     lunch: boolean
     dinner: boolean
   }
+  departureCountry?: string
+  departureCity?: string
+  arrivalCountry?: string
+  arrivalCity?: string
+  departureName?: string
+  arrivalName?: string
 }
 
-export const DailyAllowanceRow = memo(({ 
+export const SummaryAllowanceRow = memo(({ 
   date, 
   schedules,
   stayHours,
   baseCountry,
   allowance,
-  entertainment
-}: DailyAllowanceRowProps) => {
+  entertainment,
+  departureName,
+  arrivalName
+}: SummaryAllowanceRowProps) => {
   const firstSchedule = schedules.find(s => s.isFirstDay);
   const lastSchedule = schedules.find(s => s.isLastDay);
-  const { ratesCache, fetchRateForCountry } = useAllowanceRates();
+  const { ratesCache } = useAllowanceRates();
 
-  // 국가명 변환 로직
   const countryName = useMemo(() => {
-    let result;
-    // 국내 여행인 경우
-    if (baseCountry.startsWith('국내')) {
-      result = baseCountry;
-    }
-    // 유효하지 않은 국가 코드인 경우
-    else if (!baseCountry || baseCountry.length !== 2) {
-      result = baseCountry;
-    }
-    // ratesCache에서 국가명 가져오기
-    else {
-      result = ratesCache[baseCountry]?.countryName || baseCountry;
-    }
-
-    return result
+    if (!baseCountry) return ''
+    return ratesCache?.[baseCountry]?.countryName || baseCountry
   }, [baseCountry, ratesCache])
-
-  // 컴포넌트 마운트 시 해당 국가의 요율 정보 미리 가져오기
-  useEffect(() => {
-    if (baseCountry && baseCountry.length === 2 && !baseCountry.startsWith('국내')) {
-      fetchRateForCountry(baseCountry)
-    }
-  }, [baseCountry, fetchRateForCountry])
 
   return (
     <TableRow>
@@ -117,7 +105,10 @@ export const DailyAllowanceRow = memo(({
         )}
       </TableCell>
       <TableCell>
-        {countryName}
+        {departureName || '-'}
+      </TableCell>
+      <TableCell>
+        {arrivalName || '-'}
       </TableCell>
       <TableCell className="text-right font-medium text-green-700">
         {formatEuro(allowance, false)}

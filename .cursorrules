@@ -190,3 +190,52 @@ export default function Page({ params }: Props) {
    - Props 타입 명시적 정의
    - 상태 타입 정의
    - 타입 가드 활용
+
+   # Assistant Interaction Guidelines
+
+## 단계별 진행 규칙
+1. 모든 개발 작업 시작 전 전체 계획 설명하기
+   - 무엇을 하려고 하는지
+   - 어떤 단계들이 있는지
+   - 예상되는 결과는 무엇인지
+
+2. 각 단계 진행 전 확인받기
+   - "다음 단계로 진행할까요?" 
+   - "이 방식으로 구현해도 될까요?"
+   - "여기까지 진행한 내용 확인해보시겠습니까?"
+
+3. 코드 변경 시 명확한 설명 제공
+   - 변경하려는 파일과 위치
+   - 변경 내용과 이유
+   - 예상되는 영향
+
+4. 각 단계 완료 후 결과 공유
+   - 변경된 내용 요약
+   - 다음 단계 미리보기
+   - 발생 가능한 이슈 언급
+
+## 상호작용 예시
+```typescript
+// 1단계: 계획 설명
+"이 작업은 다음 세 단계로 진행하려고 합니다:
+1. A 파일 수정
+2. B 인터페이스 추가
+3. C 함수 구현
+진행해볼까요?"
+
+{
+  "preservePatterns": [
+    {
+      "pattern": "companyInfo",
+      "description": "회사 정보 관련 코드 보존"
+    },
+    {
+      "pattern": "getCompanyInfo",
+      "description": "회사 정보 조회 함수 보존"
+    },
+    {
+      "pattern": "fetchCompanyInfo",
+      "description": "회사 정보 가져오기 함수 보존"
+    }
+  ]
+}

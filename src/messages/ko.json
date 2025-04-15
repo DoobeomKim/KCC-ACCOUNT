@@ -398,6 +398,18 @@
         "city": "도착 도시",
         "cityPlaceholder": "도착 도시를 입력하세요"
       }
+    },
+    "attachments": {
+      "title": "첨부파일 업로드",
+      "description": "입력하신 경비에 대한 영수증을 업로드해주세요.\n주행거리 수당과 개인숙소는 영수증이 필요하지 않습니다.",
+      "dragAndDrop": "파일을 여기에 끌어다 놓으세요",
+      "or": "또는",
+      "browse": "파일 선택",
+      "previous": "이전 단계로",
+      "next": "다음 단계로",
+      "uploading": "업로드 중...",
+      "noData": "이전 단계의 데이터가 없습니다. 처음부터 다시 시작해주세요.",
+      "uploadError": "파일 업로드 중 오류가 발생했습니다."
     }
   },
   "countryAllowances": {

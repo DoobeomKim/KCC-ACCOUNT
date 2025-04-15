@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect } from "react"
 
 interface TimeSelectProps {
   value?: string
@@ -9,11 +10,19 @@ interface TimeSelectProps {
   className?: string
 }
 
-export function TimeSelect({ value = "08:00", onChange, className }: TimeSelectProps) {
-  // 시간과 분을 분리
-  const [hours, minutes] = value ? value.split(':') : ['08', '00']
-  const hourNum = hours ? parseInt(hours) : 8
+export function TimeSelect({ value, onChange, className }: TimeSelectProps) {
+  // 시간과 분을 분리 (기본값 처리 개선)
+  const defaultValue = "08:00";
+  const [hours, minutes] = (value || defaultValue).split(':')
+  const hourNum = parseInt(hours)
   const isPM = hourNum >= 12
+
+  // 컴포넌트 마운트 시 기본값이 없으면 설정
+  useEffect(() => {
+    if (!value) {
+      onChange?.(defaultValue);
+    }
+  }, []);
 
   // 시간 변경 핸들러
   const handleTimeChange = (newHour: number, newMinutes: string) => {

@@ -20,7 +20,7 @@ export const supabase = createClient<Database>(
       persistSession: true,
       detectSessionInUrl: false,
       flowType: 'pkce',
-      debug: isDevelopment,
+      debug: false, // 로깅 비활성화
       autoRefreshToken: true,  // 자동 갱신 활성화
       storage: {
         getItem: (key: string) => {

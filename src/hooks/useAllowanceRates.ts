@@ -7,6 +7,7 @@ export const useAllowanceRates = () => {
     // 독일 기본 요율
     'DE': {
       countryCode: 'DE',
+      countryName: 'Deutschland',
       fullDayAmount: 28,
       partialDayAmount: 14
     }
@@ -15,7 +16,6 @@ export const useAllowanceRates = () => {
   const fetchRateForCountry = useCallback(async (countryCode: string) => {
     // 국가 코드가 없거나 유효하지 않은 경우
     if (!countryCode || countryCode === '-') {
-      console.warn('Invalid country code provided');
       return ratesCache['DE'];
     }
 
@@ -23,40 +23,33 @@ export const useAllowanceRates = () => {
     
     // 캐시에 있으면 바로 반환
     if (ratesCache[normalizedCode]) {
-      console.log(`Using cached rates for ${normalizedCode}:`, ratesCache[normalizedCode]);
       return ratesCache[normalizedCode];
     }
     
     try {
-      console.log(`Fetching rates for country code: ${normalizedCode}`);
       const { data, error } = await supabase
         .from('country_allowances')
-        .select('*')
+        .select('country_code, country_name_de, full_day_amount, partial_day_amount')
         .eq('country_code', normalizedCode)
         .single();
         
       if (error) {
-        console.error(`Error fetching rates for ${normalizedCode}:`, error);
         throw error;
       }
         
       if (data) {
-        console.log(`Received data for ${normalizedCode}:`, data);
         const newRates: AllowanceRates = {
           countryCode: normalizedCode,
+          countryName: data.country_name_de,
           fullDayAmount: parseFloat(data.full_day_amount),
           partialDayAmount: parseFloat(data.partial_day_amount)
         };
         
         // 캐시 업데이트
-        setRatesCache(prev => {
-          const updated = {
-            ...prev,
-            [normalizedCode]: newRates
-          };
-          console.log('Updated rates cache:', updated);
-          return updated;
-        });
+        setRatesCache(prev => ({
+          ...prev,
+          [normalizedCode]: newRates
+        }));
         
         return newRates;
       }
@@ -65,32 +58,45 @@ export const useAllowanceRates = () => {
     }
     
     // 데이터가 없을 경우 독일 요율 반환
-    console.warn(`No data found for ${normalizedCode}, using German rates`);
     return ratesCache['DE'];
   }, [ratesCache]);
 
-  // 컴포넌트 마운트 시 주요 국가 요율 미리 가져오기
+  // 컴포넌트 마운트 시 모든 국가 요율 정보를 한 번에 가져오기
   useEffect(() => {
-    const preloadCountries = async () => {
-      // 자주 사용되는 국가 코드 목록
-      const commonCountries = ['KR', 'JP', 'CN', 'US', 'GB', 'FR', 'GN', 'CG'];
-      
+    const fetchAllRates = async () => {
       try {
-        // 모든 국가 요율을 병렬로 가져오기
-        await Promise.all(
-          commonCountries.map(async (code) => {
-            if (!ratesCache[code]) {
-              await fetchRateForCountry(code);
-            }
-          })
-        );
+        const { data, error } = await supabase
+          .from('country_allowances')
+          .select('country_code, country_name_de, full_day_amount, partial_day_amount');
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          const newRates: Record<string, AllowanceRates> = {};
+          data.forEach(country => {
+            newRates[country.country_code] = {
+              countryCode: country.country_code,
+              countryName: country.country_name_de,
+              fullDayAmount: parseFloat(country.full_day_amount),
+              partialDayAmount: parseFloat(country.partial_day_amount)
+            };
+          });
+          
+          // 캐시 업데이트 (기존 DE 정보 유지)
+          setRatesCache(prev => ({
+            ...prev,
+            ...newRates
+          }));
+        }
       } catch (error) {
-        console.error('Error preloading country rates:', error);
+        console.error('Error fetching all country rates:', error);
       }
     };
     
-    preloadCountries();
-  }, [fetchRateForCountry]);
+    fetchAllRates();
+  }, []);
 
   return { ratesCache, fetchRateForCountry };
 }; 
