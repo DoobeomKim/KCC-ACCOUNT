@@ -423,11 +423,8 @@ export default function BusinessExpensePage() {
   
   // 데이터 로드 함수
   useEffect(() => {
-    // 정확한 pathname 체크를 위해 locale을 포함한 경로 구성
-    const newFormPath = `/${locale}/business-expense`;
-    
-    // 새로운 폼 생성인 경우에만 초기화
-    if (pathname === newFormPath) {
+    // URL이 기본 business-expense 페이지인 경우 세션 스토리지 초기화
+    if (pathname === `/${locale}/business-expense`) {
       console.log('새로운 폼 시작: 세션 스토리지 초기화');
       sessionStorage.removeItem('expenseFormData');
       sessionStorage.removeItem('expenseEditId');
@@ -456,7 +453,6 @@ export default function BusinessExpensePage() {
         mealAllowanceInfo: {}
       });
     } else {
-      // 기존 데이터 로드
       const loadSavedData = () => {
         try {
           // 세션 스토리지에서 데이터 로드
@@ -520,8 +516,8 @@ export default function BusinessExpensePage() {
 
         if (!countries) {
           console.error('국가 데이터를 받지 못함');
-          return;
-        }
+        return;
+      }
 
         const formattedOptions = countries.map((country) => ({
           value: country.country_code,
