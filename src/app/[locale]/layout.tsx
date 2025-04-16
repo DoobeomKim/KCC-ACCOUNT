@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { locales, defaultLocale } from '@/i18n/settings';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
+import MobileHeader from '@/components/layout/MobileHeader';
+import Sidebar from '@/components/layout/Sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -83,12 +85,22 @@ export default async function LocaleLayout({
       <body className={inter.className}>
         <div suppressHydrationWarning>
           <NextIntlClientProvider locale={locale} messages={messages}>
-            <div className="lg:pl-72">
-              <main className="min-h-screen w-full">
-                <div className="w-full max-w-[1200px] mx-auto lg:ml-0 xl:mx-8 2xl:ml-8 2xl:mr-auto px-2 sm:px-4 lg:pr-4 xl:pr-8">
-                  {children}
-                </div>
-              </main>
+            <div className="min-h-screen">
+              {/* 모바일 헤더 */}
+              <MobileHeader />
+              
+              {/* 데스크톱 사이드바 */}
+              <div className="hidden lg:block fixed left-0 top-0 h-screen w-72 bg-gray-900">
+                <Sidebar />
+              </div>
+
+              <div className="lg:pl-72">
+                <main className="min-h-screen w-full">
+                  <div className="w-full py-8 px-[5px] mt-16 lg:mt-0">
+                    {children}
+                  </div>
+                </main>
+              </div>
             </div>
           </NextIntlClientProvider>
         </div>

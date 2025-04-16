@@ -23,8 +23,6 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  ArrowUpToLine,
-  Download,
   Plus,
   Search,
   Users,
@@ -33,10 +31,8 @@ import {
   Activity,
   Settings,
   Loader2,
-  FileText,
   Trash2
 } from "lucide-react"
-import Sidebar from "@/components/layout/Sidebar"
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatEuro } from '@/lib/utils'
@@ -347,12 +343,6 @@ export default function ExpenseListPage() {
     }
   }
   
-  // PDF 저장 핸들러
-  const handleSavePDF = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation() // 이벤트 버블링 방지
-    toast.info('PDF 저장 기능은 아직 구현되지 않았습니다.')
-  }
-  
   // 삭제 핸들러
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation() // 이벤트 버블링 방지
@@ -426,172 +416,154 @@ export default function ExpenseListPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64">
-        <div className="p-8 space-y-8">
-          {/* 헤더 섹션 */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{t('expenseList')}</h1>
-              <p className="text-gray-500">출장 경비 기록을 관리하고 조회합니다.</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="gap-2 hover:bg-gray-800 hover:text-white cursor-pointer">
-                <ArrowUpToLine className="h-4 w-4" />
-                내보내기
-              </Button>
-              <Link href={`/${locale}/business-expense`}>
-                <Button className="gap-2 hover:bg-gray-800 hover:text-white cursor-pointer">
-                  <Plus className="h-4 w-4" />
-                  {t('businessExpense')}
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* 통계 카드 섹션 */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Card className="bg-white shadow-sm">
-                <CardContent className="py-1.5 px-3.5">
-                  <div className="space-y-0">
-                    <p className="text-xs font-medium text-muted-foreground">전체 기록</p>
-                    <p className="text-lg font-bold leading-none mt-0.5">{stats.total}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white shadow-sm">
-                <CardContent className="py-1.5 px-3.5">
-                  <div className="space-y-0">
-                    <p className="text-xs font-medium text-muted-foreground">이번달 신규</p>
-                    <p className="text-lg font-bold leading-none mt-0.5">{stats.newThisMonth}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white shadow-sm">
-                <CardContent className="py-1.5 px-3.5">
-                  <div className="space-y-0">
-                    <p className="text-xs font-medium text-muted-foreground">이번달 총 금액</p>
-                    <p className="text-lg font-bold leading-none mt-0.5">{formatEuro(stats.monthlyTotal)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white shadow-sm">
-                <CardContent className="py-1.5 px-3.5">
-                  <div className="space-y-0">
-                    <p className="text-xs font-medium text-muted-foreground">최근 7일 신규</p>
-                    <p className="text-lg font-bold leading-none mt-0.5">{stats.newLastWeek}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* 필터 및 검색 섹션 */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="모든 상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
-                  <SelectItem value="draft">임시저장</SelectItem>
-                  <SelectItem value="submitted">저장됨</SelectItem>
-                  <SelectItem value="approved">승인됨</SelectItem>
-                  <SelectItem value="rejected">반려됨</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="이름, 목적, 등록번호 검색..."
-                className="pl-10 w-[300px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* 테이블 섹션 */}
-          <div className="bg-white rounded-lg border">
-            {loading ? (
-              <div className="flex justify-center items-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-                <span className="ml-2 text-gray-500">데이터를 불러오는 중...</span>
-              </div>
-            ) : expenses.length === 0 ? (
-              <div className="flex flex-col justify-center items-center p-8">
-                <p className="text-gray-500 mb-4">출장 경비 데이터가 없습니다.</p>
-                <Link href={`/${locale}/business-expense`}>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    새 출장 경비 등록하기
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>등록번호</TableHead>
-                    <TableHead>출장자</TableHead>
-                    <TableHead>출장 기간</TableHead>
-                    <TableHead>상태</TableHead>
-                    <TableHead>총 금액</TableHead>
-                    <TableHead className="text-right">액션</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenses.map((expense) => (
-                    <TableRow 
-                      key={expense.id} 
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleRowClick(expense.id)}
-                    >
-                      <TableCell>{expense.registration_number}</TableCell>
-                      <TableCell className="font-medium">{expense.name}</TableCell>
-                      <TableCell>{formatDateRange(expense.start_date, expense.end_date)}</TableCell>
-                      <TableCell>
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          getStatusStyle(expense.status).class
-                        }`}>
-                          {getStatusStyle(expense.status).text}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {calculateTotalFromJson(expense.calculated_totals)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => handleSavePDF(e, expense.id)}
-                            title="PDF 저장"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleDelete(e, expense.id)}
-                            className="text-red-500 hover:bg-gray-800 hover:text-white cursor-pointer"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+    <div className="p-4 lg:p-8 space-y-8">
+      {/* 헤더 섹션 */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t('expenseList')}</h1>
+          <p className="text-gray-500">출장 경비 기록을 관리하고 조회합니다.</p>
         </div>
+        <div className="flex gap-2">
+          <Link href={`/${locale}/business-expense`}>
+            <Button className="gap-2 hover:bg-gray-800 hover:text-white cursor-pointer">
+              <Plus className="h-4 w-4" />
+              {t('businessExpense')}
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* 통계 카드 섹션 */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="bg-white shadow-sm">
+            <CardContent className="py-1.5 px-3.5">
+              <div className="space-y-0">
+                <p className="text-xs font-medium text-muted-foreground">전체 기록</p>
+                <p className="text-lg font-bold leading-none mt-0.5">{stats.total}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-sm">
+            <CardContent className="py-1.5 px-3.5">
+              <div className="space-y-0">
+                <p className="text-xs font-medium text-muted-foreground">이번달 신규</p>
+                <p className="text-lg font-bold leading-none mt-0.5">{stats.newThisMonth}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-sm">
+            <CardContent className="py-1.5 px-3.5">
+              <div className="space-y-0">
+                <p className="text-xs font-medium text-muted-foreground">이번달 총 금액</p>
+                <p className="text-lg font-bold leading-none mt-0.5">{formatEuro(stats.monthlyTotal)}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-sm">
+            <CardContent className="py-1.5 px-3.5">
+              <div className="space-y-0">
+                <p className="text-xs font-medium text-muted-foreground">최근 7일 신규</p>
+                <p className="text-lg font-bold leading-none mt-0.5">{stats.newLastWeek}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* 필터 및 검색 섹션 */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="모든 상태" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">모든 상태</SelectItem>
+              <SelectItem value="draft">임시저장</SelectItem>
+              <SelectItem value="submitted">저장됨</SelectItem>
+              <SelectItem value="approved">승인됨</SelectItem>
+              <SelectItem value="rejected">반려됨</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="이름, 목적, 등록번호 검색..."
+            className="pl-10 w-[300px]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* 테이블 섹션 */}
+      <div className="bg-white rounded-lg border">
+        {loading ? (
+          <div className="flex justify-center items-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+            <span className="ml-2 text-gray-500">데이터를 불러오는 중...</span>
+          </div>
+        ) : expenses.length === 0 ? (
+          <div className="flex flex-col justify-center items-center p-8">
+            <p className="text-gray-500 mb-4">출장 경비 데이터가 없습니다.</p>
+            <Link href={`/${locale}/business-expense`}>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                새 출장 경비 등록하기
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>등록번호</TableHead>
+                <TableHead>출장자</TableHead>
+                <TableHead className="w-[120px] md:w-auto">출장 기간</TableHead>
+                <TableHead className="w-[100px] md:w-auto">상태</TableHead>
+                <TableHead>총 금액</TableHead>
+                <TableHead className="text-right">액션</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {expenses.map((expense) => (
+                <TableRow 
+                  key={expense.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleRowClick(expense.id)}
+                >
+                  <TableCell className="text-[12px] md:text-sm">{expense.registration_number}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm font-medium">{expense.name}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm whitespace-nowrap">{formatDateRange(expense.start_date, expense.end_date)}</TableCell>
+                  <TableCell>
+                    <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${
+                      getStatusStyle(expense.status).class
+                    }`}>
+                      {getStatusStyle(expense.status).text}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-[12px] md:text-sm font-medium">
+                    {calculateTotalFromJson(expense.calculated_totals)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleDelete(e, expense.id)}
+                        className="text-red-500 hover:bg-gray-800 hover:text-white cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   )

@@ -25,12 +25,11 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Download, Upload, Plus, Pencil, Check, X, AlertCircle, CheckCircle2, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
-import Sidebar from "@/components/layout/Sidebar"
+import { cn } from "@/lib/utils"
+import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from "@/lib/supabase"
 import type { CountryAllowance, CountryAllowanceFormData } from "@/types/country-allowances"
 import * as XLSX from 'xlsx'
-import { cn } from "@/lib/utils"
-import { useRouter, usePathname } from 'next/navigation'
 
 interface CountryAllowanceData {
   id: string;
@@ -470,7 +469,6 @@ export default function CountryAllowancesPage() {
   if (userRole !== 'admin') {
     return (
       <div className="flex min-h-screen bg-gray-100">
-        <Sidebar />
         <div className="flex-1 lg:ml-64">
           <div className="p-8">
             <Card>
@@ -487,243 +485,233 @@ export default function CountryAllowancesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64">
-        <div className="p-8 space-y-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold tracking-tight">{t('countryAllowances.title')}</h1>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className={cn("gap-2", isDownloading && "loading-button")}
-                onClick={handleExport}
-                disabled={isDownloading}
-              >
-                <Download className="h-4 w-4" />
-                {t('countryAllowances.buttons.excelDownload')}
+    <div className="p-4 lg:p-8 space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">국가별 출장 비용</h1>
+          <p className="text-[12px] md:text-sm text-gray-500">국가별 출장 비용을 관리합니다.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className={cn("gap-2", isDownloading && "loading-button")}
+            onClick={handleExport}
+            disabled={isDownloading}
+          >
+            <Download className="h-3 w-3 md:h-4 md:w-4" />
+            내보내기
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Upload className="h-3 w-3 md:h-4 md:w-4" />
+                불러오기
               </Button>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    {t('countryAllowances.buttons.excelUpload')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('countryAllowances.uploadDialog.title')}</DialogTitle>
-                    <DialogDescription>
-                      {t('countryAllowances.uploadDialog.description')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                      <Label htmlFor="excel-upload">{t('countryAllowances.uploadDialog.selectFile')}</Label>
-                      <Input
-                        id="excel-upload"
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={handleImport}
-                        disabled={uploadStatus === 'processing'}
-                        className="cursor-pointer"
-                        placeholder={t('countryAllowances.uploadDialog.noFileSelected')}
-                      />
-                    </div>
-                    {uploadStatus !== 'idle' && (
-                      <div className={`flex items-center gap-2 p-4 rounded-lg ${
-                        uploadStatus === 'processing' ? 'bg-blue-50 text-blue-700' :
-                        uploadStatus === 'success' ? 'bg-green-50 text-green-700' :
-                        'bg-red-50 text-red-700'
-                      }`}>
-                        {uploadStatus === 'processing' && <AlertCircle className="h-5 w-5" />}
-                        {uploadStatus === 'success' && <CheckCircle2 className="h-5 w-5" />}
-                        {uploadStatus === 'error' && <AlertCircle className="h-5 w-5" />}
-                        <span>{uploadMessage}</span>
-                      </div>
-                    )}
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('countryAllowances.uploadDialog.title')}</DialogTitle>
+                <DialogDescription>
+                  {t('countryAllowances.uploadDialog.description')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="excel-upload">{t('countryAllowances.uploadDialog.selectFile')}</Label>
+                  <Input
+                    id="excel-upload"
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleImport}
+                    disabled={uploadStatus === 'processing'}
+                    className="cursor-pointer"
+                    placeholder={t('countryAllowances.uploadDialog.noFileSelected')}
+                  />
+                </div>
+                {uploadStatus !== 'idle' && (
+                  <div className={`flex items-center gap-2 p-4 rounded-lg ${
+                    uploadStatus === 'processing' ? 'bg-blue-50 text-blue-700' :
+                    uploadStatus === 'success' ? 'bg-green-50 text-green-700' :
+                    'bg-red-50 text-red-700'
+                  }`}>
+                    {uploadStatus === 'processing' && <AlertCircle className="h-5 w-5" />}
+                    {uploadStatus === 'success' && <CheckCircle2 className="h-5 w-5" />}
+                    {uploadStatus === 'error' && <AlertCircle className="h-5 w-5" />}
+                    <span>{uploadMessage}</span>
                   </div>
-                </DialogContent>
-              </Dialog>
-              <Button 
-                className="gap-2"
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                {t('countryAllowances.buttons.add')}
-              </Button>
-            </div>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead 
-                      onClick={() => handleSort('country_code')}
-                      className="cursor-pointer hover:bg-gray-50 text-sm"
-                    >
-                      <div className="flex items-center">
-                        {t('countryAllowances.table.headers.countryCode')}
-                        {getSortIcon('country_code')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      onClick={() => handleSort('country_name_de')}
-                      className="cursor-pointer hover:bg-gray-50 text-sm"
-                    >
-                      <div className="flex items-center">
-                        {t('countryAllowances.table.headers.countryNameDe')}
-                        {getSortIcon('country_name_de')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      onClick={() => handleSort('country_name_ko')}
-                      className="cursor-pointer hover:bg-gray-50 text-sm"
-                    >
-                      <div className="flex items-center">
-                        {t('countryAllowances.table.headers.countryNameKo')}
-                        {getSortIcon('country_name_ko')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right text-sm">{t('countryAllowances.table.headers.fullDayAmount')}</TableHead>
-                    <TableHead className="text-right text-sm">{t('countryAllowances.table.headers.partialDayAmount')}</TableHead>
-                    <TableHead className="text-right text-sm">{t('countryAllowances.table.headers.accommodationAmount')}</TableHead>
-                    <TableHead className="w-[100px] text-sm">{t('countryAllowances.table.headers.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {countryAllowances.map((allowance) => (
-                    <TableRow key={allowance.id}>
-                      <TableCell className="font-medium">
-                        {allowance.country_code}
-                      </TableCell>
-                      <TableCell>{allowance.country_name_de}</TableCell>
-                      <TableCell>{allowance.country_name_ko}</TableCell>
-                      <TableCell className="text-right">
-                        {allowance.full_day_amount.toFixed(2)}€
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {allowance.partial_day_amount.toFixed(2)}€
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {allowance.accommodation_amount.toFixed(2)}€
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(allowance)}
-                          className="hover:bg-gray-800 hover:text-white cursor-pointer"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(allowance.id)}
-                          className="text-red-500 hover:bg-gray-800 hover:text-white cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button 
+            className="gap-2"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <Plus className="h-3 w-3 md:h-4 md:w-4" />
+            새로 추가
+          </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="bg-white shadow-sm">
+          <CardContent className="py-1.5 px-3.5">
+            <div className="space-y-0">
+              <p className="text-[10px] md:text-xs font-medium text-muted-foreground">전체 국가</p>
+              <p className="text-base md:text-lg font-bold leading-none mt-0.5">{countryAllowances.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead 
+                  onClick={() => handleSort('country_code')}
+                  className="cursor-pointer hover:bg-gray-50 text-[10px] md:text-xs whitespace-nowrap"
+                >
+                  <div className="flex items-center">
+                    국가코드
+                    {getSortIcon('country_code')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  onClick={() => handleSort('country_name_de')}
+                  className="cursor-pointer hover:bg-gray-50 text-[10px] md:text-xs whitespace-nowrap"
+                >
+                  <div className="flex items-center">
+                    독일어명
+                    {getSortIcon('country_name_de')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  onClick={() => handleSort('country_name_ko')}
+                  className="cursor-pointer hover:bg-gray-50 text-[10px] md:text-xs whitespace-nowrap"
+                >
+                  <div className="flex items-center">
+                    한국어명
+                    {getSortIcon('country_name_ko')}
+                  </div>
+                </TableHead>
+                <TableHead className="text-right text-[10px] md:text-xs whitespace-nowrap">전일</TableHead>
+                <TableHead className="text-right text-[10px] md:text-xs whitespace-nowrap">반일</TableHead>
+                <TableHead className="text-right text-[10px] md:text-xs whitespace-nowrap">숙박비</TableHead>
+                <TableHead className="w-[100px] text-[10px] md:text-xs whitespace-nowrap">관리</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {countryAllowances.map((allowance) => (
+                <TableRow key={allowance.id}>
+                  <TableCell className="text-[12px] md:text-sm font-medium">{allowance.country_code}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm">{allowance.country_name_de}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm">{allowance.country_name_ko}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm">{allowance.full_day_amount}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm">{allowance.partial_day_amount}</TableCell>
+                  <TableCell className="text-[12px] md:text-sm">{allowance.accommodation_amount}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(allowance)}
+                        className="text-[12px] md:text-sm hover:bg-gray-800 hover:text-white"
+                      >
+                        <Pencil className="h-3 w-3 md:h-4 md:w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(allowance.id)}
+                        className="text-[12px] md:text-sm text-red-500 hover:bg-gray-800 hover:text-white"
+                      >
+                        <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* 새로운 국가 추가 모달 */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('countryAllowances.addDialog.title')}</DialogTitle>
-            <DialogDescription>
-              {t('countryAllowances.addDialog.description')}
+            <DialogTitle className="text-lg md:text-xl">새 국가 추가</DialogTitle>
+            <DialogDescription className="text-[12px] md:text-sm">
+              새로운 국가의 출장 비용 정보를 입력하세요.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-sm">{t('countryAllowances.form.countryCode.label')}</Label>
-              <div className="space-y-1">
-                <Input
-                  value={formData.country_code}
-                  onChange={(e) => handleCountryCodeChange(e.target.value)}
-                  maxLength={6}
-                  placeholder={t('countryAllowances.form.countryCode.placeholder')}
-                />
-                <p className="text-sm text-muted-foreground">
-                  {t('countryAllowances.form.countryCode.description')}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm">{t('countryAllowances.form.countryNameDe.label')}</Label>
+              <Label className="text-[12px] md:text-sm">국가 코드</Label>
               <Input
+                className="text-[12px] md:text-sm"
+                placeholder="예: DE 또는 AU-SYD"
+                value={formData.country_code}
+                onChange={(e) => handleCountryCodeChange(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[12px] md:text-sm">독일어 국가명</Label>
+              <Input
+                className="text-[12px] md:text-sm"
+                placeholder="예: Deutschland"
                 value={formData.country_name_de}
                 onChange={(e) => handleInputChange('country_name_de', e.target.value)}
-                placeholder={t('countryAllowances.form.countryNameDe.placeholder')}
               />
             </div>
-
             <div className="space-y-2">
-              <Label className="text-sm">{t('countryAllowances.form.countryNameKo.label')}</Label>
+              <Label className="text-[12px] md:text-sm">한국어 국가명</Label>
               <Input
+                className="text-[12px] md:text-sm"
+                placeholder="예: 독일"
                 value={formData.country_name_ko}
                 onChange={(e) => handleInputChange('country_name_ko', e.target.value)}
-                placeholder={t('countryAllowances.form.countryNameKo.placeholder')}
               />
             </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <Label className="text-sm">{t('countryAllowances.form.fullDayAmount.label')}</Label>
-                <Input
-                  type="number"
-                  value={formData.full_day_amount}
-                  onChange={(e) => handleInputChange('full_day_amount', e.target.value)}
-                  placeholder={t('countryAllowances.form.fullDayAmount.placeholder')}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-sm">{t('countryAllowances.form.partialDayAmount.label')}</Label>
-                <Input
-                  type="number"
-                  value={formData.partial_day_amount}
-                  onChange={(e) => handleInputChange('partial_day_amount', e.target.value)}
-                  placeholder={t('countryAllowances.form.partialDayAmount.placeholder')}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-sm">{t('countryAllowances.form.accommodationAmount.label')}</Label>
-                <Input
-                  type="number"
-                  value={formData.accommodation_amount}
-                  onChange={(e) => handleInputChange('accommodation_amount', e.target.value)}
-                  placeholder={t('countryAllowances.form.accommodationAmount.placeholder')}
-                  step="0.01"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label className="text-[12px] md:text-sm">24시간 일당 (€)</Label>
+              <Input
+                className="text-[12px] md:text-sm"
+                type="number"
+                placeholder="0.00"
+                value={formData.full_day_amount}
+                onChange={(e) => handleInputChange('full_day_amount', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[12px] md:text-sm">8시간 미만 일당 (€)</Label>
+              <Input
+                className="text-[12px] md:text-sm"
+                type="number"
+                placeholder="0.00"
+                value={formData.partial_day_amount}
+                onChange={(e) => handleInputChange('partial_day_amount', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[12px] md:text-sm">숙박비 한도 (€)</Label>
+              <Input
+                className="text-[12px] md:text-sm"
+                type="number"
+                placeholder="0.00"
+                value={formData.accommodation_amount}
+                onChange={(e) => handleInputChange('accommodation_amount', e.target.value)}
+              />
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              {t('common.buttons.cancel')}
+            <Button variant="outline" className="text-[12px] md:text-sm" onClick={() => setIsAddModalOpen(false)}>
+              취소
             </Button>
-            <Button onClick={handleAdd}>
-              {t('common.buttons.add')}
+            <Button className="text-[12px] md:text-sm" onClick={handleAdd}>
+              추가
             </Button>
           </DialogFooter>
         </DialogContent>

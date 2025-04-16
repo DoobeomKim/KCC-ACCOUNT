@@ -31,7 +31,11 @@ interface NavItem {
   label: string
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  isMobile?: boolean;
+}
+
+export default function Sidebar({ isMobile = false }: SidebarProps) {
   const t = useTranslations('navigation')
   const pathname = usePathname()
   const router = useRouter()
@@ -94,7 +98,7 @@ export default function Sidebar() {
   ]
 
   const NavLinks = () => (
-    <nav className="space-y-2">
+    <nav className="space-y-1">
       {navItems.map((item) => {
         const isActive = pathname === item.href
         return (
@@ -103,14 +107,14 @@ export default function Sidebar() {
             href={item.href}
             onClick={() => setIsOpen(false)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors',
+              'flex items-center gap-3 px-4 py-3 text-sm rounded-lg transition-colors min-h-[48px]',
               isActive 
                 ? 'bg-gray-800 text-white font-medium' 
-                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-800'
             )}
           >
-            <item.icon className="w-5 h-5" />
-            {item.label}
+            <item.icon className="w-5 h-5 flex-shrink-0" />
+            <span className="flex-1">{item.label}</span>
           </Link>
         )
       })}
@@ -118,14 +122,15 @@ export default function Sidebar() {
   )
 
   const SidebarHeader = () => (
-    <div className="px-4 py-6 border-b border-gray-700">
-      <div className="flex items-center gap-3 mb-4">
+    <div className="px-4 py-4 border-b border-gray-700">
+      <div className="flex items-center gap-3 mb-3 min-h-[48px]">
         <KCCIcon className="w-8 h-8" />
-        <h1 className="text-xl font-bold text-white">KCC Account</h1>
+        <h1 className="text-lg font-bold text-white">KCC Account</h1>
       </div>
       {userEmail && (
-        <div className="text-sm text-gray-300">
-          {t('status.loggedInAs', { email: userEmail })}
+        <div className="text-sm text-gray-300 break-all">
+          <div className="text-xs text-gray-400">현재 로그인 중</div>
+          <div>{userEmail}</div>
         </div>
       )}
     </div>
@@ -133,7 +138,7 @@ export default function Sidebar() {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-[calc(100vh-140px)]">
-      <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+      <nav className="flex-1 py-2 overflow-y-auto">
         <NavLinks />
       </nav>
 
@@ -142,22 +147,22 @@ export default function Sidebar() {
           <Link
             href={`/ko${pathname.substring(3)}`}
             className={cn(
-              "flex items-center justify-center gap-2 py-1.5 text-sm transition-colors",
+              "flex items-center justify-center gap-2 py-2 text-sm transition-colors min-h-[40px]",
               pathname.includes('/ko') 
                 ? "bg-gray-800 text-white font-medium" 
-                : "bg-gray-900 text-gray-300 hover:text-white"
+                : "bg-gray-900 text-gray-300 hover:text-white active:bg-gray-800"
             )}
           >
-            <Globe2 className="h-4 w-4" />
+            <Globe2 className="h-4 w-4 flex-shrink-0" />
             한국어
           </Link>
           <Link
             href={`/de${pathname.substring(3)}`}
             className={cn(
-              "flex items-center justify-center gap-2 py-1.5 text-sm transition-colors",
+              "flex items-center justify-center gap-2 py-2 text-sm transition-colors min-h-[40px]",
               pathname.includes('/de') 
                 ? "bg-gray-800 text-white font-medium" 
-                : "bg-gray-900 text-gray-300 hover:text-white"
+                : "bg-gray-900 text-gray-300 hover:text-white active:bg-gray-800"
             )}
           >
             Deutsch
@@ -166,15 +171,26 @@ export default function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-300 rounded-md hover:text-white hover:bg-gray-800"
+          className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-300 rounded-lg transition-colors min-h-[48px] hover:bg-gray-800/50 hover:text-white active:bg-gray-800"
         >
-          <LogOut className="h-5 w-5" />
-          <span>{t('logout')}</span>
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1">{t('logout')}</span>
         </button>
       </div>
     </div>
   )
 
+  // 모바일 모드일 때는 내부 컨텐츠만 반환
+  if (isMobile) {
+    return (
+      <>
+        <SidebarHeader />
+        <SidebarContent />
+      </>
+    )
+  }
+
+  // 데스크톱 모드
   return (
     <>
       {/* 모바일 사이드바 */}
@@ -182,10 +198,10 @@ export default function Sidebar() {
         <SheetTrigger asChild>
           <Button
             variant="ghost"
-            className="lg:hidden"
+            className="lg:hidden flex items-center justify-center p-2"
             size="icon"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 bg-gray-900 p-0">
@@ -197,7 +213,7 @@ export default function Sidebar() {
       </Sheet>
 
       {/* 데스크톱 사이드바 */}
-      <div className="hidden lg:block fixed left-0 top-0 h-screen w-72 bg-gray-900 overflow-hidden">
+      <div className="hidden lg:block">
         <SidebarHeader />
         <SidebarContent />
       </div>

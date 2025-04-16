@@ -221,10 +221,14 @@ export interface OtherExpense {
 }
 
 export interface EntertainmentExpense {
-  date: Date;
-  description: string;
-  amount: number;
-  vat: number;
-  participants: string[];
-  location: string;
+  date?: Date;
+  type?: 'breakfast' | 'lunch' | 'dinner' | 'other';
+  otherType?: string;
+  country?: string;
+  companyName?: string;
+  totalAmount?: string;
+  paidBy?: 'company' | 'personal';
+  vat?: string;
+  isExpanded?: boolean;
+  datePickerOpen?: boolean;
 } 

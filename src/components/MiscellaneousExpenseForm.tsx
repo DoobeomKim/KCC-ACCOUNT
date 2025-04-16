@@ -49,6 +49,7 @@ export default function MiscellaneousExpenseForm({ items, onAdd, onUpdate, onRem
           onClick={onAdd}
           variant="outline"
           size="sm"
+          className="h-10 px-4"
         >
           {t('expense.miscellaneous.addButton')}
         </Button>
@@ -94,24 +95,25 @@ export default function MiscellaneousExpenseForm({ items, onAdd, onUpdate, onRem
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="outline"
+                      size="icon"
                       onClick={() => onToggle(index)}
+                      className="h-10 w-10 rounded-full"
                     >
                       {item.isExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
+                        <ChevronUp className="h-5 w-5" />
                       ) : (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-5 w-5" />
                       )}
                     </Button>
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="outline"
+                      size="icon"
                       onClick={() => onRemove(index)}
-                      className="text-red-500 hover:bg-accent cursor-pointer"
-                      title={t("expense.miscellaneous.deleteButton")}
+                      className="h-10 w-10 rounded-full text-red-500"
+                      aria-label={t("expense.miscellaneous.deleteButton")}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>

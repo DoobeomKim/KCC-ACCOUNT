@@ -49,7 +49,7 @@ import {
   SelectLabel,
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
-import Sidebar from '@/components/layout/Sidebar'
+import { Sidebar } from '@/components/layout/Sidebar'
 import DatePicker from '@/components/DatePicker'
 import { supabase } from '@/lib/supabase'
 import { cn, formatNumber, parseGermanNumber } from '@/lib/utils'
@@ -1051,8 +1051,7 @@ export default function BusinessExpensePage() {
   if (isInitialLoad) {
     return (
       <div className="flex min-h-screen bg-gray-100">
-        <Sidebar />
-        <div className="flex-1 lg:ml-64">
+        <div className="flex-1">
           <div className="p-8">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
@@ -1070,8 +1069,7 @@ export default function BusinessExpensePage() {
   // 메인 컴포넌트 렌더링
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1">
         <div>
           <div className="container py-10 px-4">
             <div className="mb-8">
@@ -1090,70 +1088,82 @@ export default function BusinessExpensePage() {
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">{t("expense.basicInfo.title")}</h2>
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="outline"
+                      size="icon"
                       onClick={() => toggleSection('basicInfo')}
-                      className="hover:bg-gray-800 hover:text-white cursor-pointer"
+                      className="h-10 w-10 rounded-full"
+                      aria-label={expandedSections.basicInfo ? "기본 정보 접기" : "기본 정보 펼치기"}
                     >
-                      {expandedSections.basicInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {expandedSections.basicInfo ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </Button>
                   </div>
                   
                   {expandedSections.basicInfo && (
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {/* 기본 정보 내용 */}
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                        <RequiredLabel>
-                          <Label>{t("expense.basicInfo.travelerName.label")}</Label>
-                        </RequiredLabel>
-                        <Input
-                            id="traveler-name"
-                          value={formData.name}
-                          onChange={(e) => updateFormData('name', e.target.value)}
-                          placeholder={t("expense.basicInfo.travelerName.placeholder")}
-                        />
-                      </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="grid gap-2">
+                      <div className="space-y-5 py-2">
+                        {/* 출장자 이름 */}
+                        <div className="space-y-2">
                           <RequiredLabel>
-                            <Label>{t("expense.basicInfo.startDate")}</Label>
+                            <Label className="text-sm font-medium">{t("expense.basicInfo.travelerName.label")}</Label>
                           </RequiredLabel>
-                            <div id="start-date" className="flex flex-col space-y-2">
+                          <Input
+                            id="traveler-name"
+                            value={formData.name}
+                            onChange={(e) => updateFormData('name', e.target.value)}
+                            placeholder={t("expense.basicInfo.travelerName.placeholder")}
+                            className="h-11 px-3 py-2 text-base"
+                          />
+                        </div>
+                        
+                        {/* 시작 날짜/시간 */}
+                        <div className="space-y-5 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+                          <div className="space-y-2">
+                            <RequiredLabel>
+                              <Label className="text-sm font-medium">{t("expense.basicInfo.startDate")}</Label>
+                            </RequiredLabel>
+                            <div id="start-date">
                               <DatePicker
                                 date={formData.startDate}
                                 setDate={(date) => updateFormData('startDate', date)}
                               />
-                        </div>
+                            </div>
                           </div>
-                          <div className="grid gap-2">
-                          <Label>{t("expense.basicInfo.startTime")}</Label>
-                          <TimeSelect
-                            value={formData.startTime}
-                            onChange={(value) => updateFormData('startTime', value)}
-                          />
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">{t("expense.basicInfo.startTime")}</Label>
+                            <TimeSelect
+                              value={formData.startTime}
+                              onChange={(value) => updateFormData('startTime', value)}
+                            />
+                          </div>
                         </div>
-                      </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                          <RequiredLabel>
-                            <Label>{t("expense.basicInfo.endDate")}</Label>
-                          </RequiredLabel>
-                            <div id="end-date" className="flex flex-col space-y-2">
+                        
+                        {/* 종료 날짜/시간 */}
+                        <div className="space-y-5 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+                          <div className="space-y-2">
+                            <RequiredLabel>
+                              <Label className="text-sm font-medium">{t("expense.basicInfo.endDate")}</Label>
+                            </RequiredLabel>
+                            <div id="end-date">
                               <DatePicker
                                 date={formData.endDate}
                                 setDate={(date) => updateFormData('endDate', date)}
                               />
-                        </div>
+                            </div>
                           </div>
-                          <div className="grid gap-2">
-                          <Label>{t("expense.basicInfo.endTime")}</Label>
-                          <TimeSelect
-                            value={formData.endTime}
-                            onChange={(value) => updateFormData('endTime', value)}
-                          />
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">{t("expense.basicInfo.endTime")}</Label>
+                            <TimeSelect
+                              value={formData.endTime}
+                              onChange={(value) => updateFormData('endTime', value)}
+                            />
                           </div>
                         </div>
+                        
+                        {/* 출장 목적 필드 제거 */}
+                        {/* 프로젝트 정보 섹션 제거 */}
                       </div>
                     </div>
                   )}
@@ -1169,27 +1179,32 @@ export default function BusinessExpensePage() {
                       onClick={addVisit}
                       variant="outline"
                       size="sm"
+                      className="h-10 px-4"
                     >
                       {t("expense.visitInfo.addButton")}
                     </Button>
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {formData.visits.map((visit, index) => (
-                      <div key={index} className="flex items-center gap-4">
-                        <div className="w-[120px]">
+                      <div key={index} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-3 border rounded-lg">
+                        {/* 날짜 선택 */}
+                        <div className="w-full md:w-[120px]">
+                          <Label className="text-sm font-medium block md:hidden mb-1">
+                            {t("expense.visitInfo.date")}
+                          </Label>
                           <Popover open={visit.datePickerOpen} onOpenChange={(open) => updateVisit(index, 'datePickerOpen', open)}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 className={cn(
-                                  "w-full justify-start text-left font-normal",
+                                  "w-full h-11 justify-start text-left font-normal",
                                   !visit.date && "text-muted-foreground"
                                 )}
                                 disabled={!formData.startDate || !formData.endDate}
                               >
-                                <CalendarIcon className="mr-1 h-3 w-3" />
-                                {visit.date ? dateFormat(visit.date, "yy-MM-dd") : t("expense.visitInfo.date")}
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {visit.date ? dateFormat(visit.date, "yy-MM-dd") : t("expense.visitInfo.selectDate")}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
@@ -1229,42 +1244,66 @@ export default function BusinessExpensePage() {
                           </Popover>
                         </div>
 
-                        <div className="flex-1">
+                        {/* 회사명 */}
+                        <div className="w-full md:flex-1">
+                          <Label className="text-sm font-medium block md:hidden mb-1">
+                            {t("expense.visitInfo.companyName.label")}
+                          </Label>
                           <Input
                             value={visit.companyName}
                             onChange={(e) => updateVisit(index, 'companyName', e.target.value)}
                             placeholder={t("expense.visitInfo.companyName.placeholder")}
+                            className="h-11"
                           />
                         </div>
 
-                        <div className="flex-1">
+                        {/* 도시 */}
+                        <div className="w-full md:flex-1">
+                          <Label className="text-sm font-medium block md:hidden mb-1">
+                            {t("expense.visitInfo.city.label")}
+                          </Label>
                           <Input
                             value={visit.city}
                             onChange={(e) => updateVisit(index, 'city', e.target.value)}
                             placeholder={t("expense.visitInfo.city.placeholder")}
+                            className="h-11"
                           />
                         </div>
 
-                        <div className="flex-[2]">
+                        {/* 설명 */}
+                        <div className="w-full md:flex-[2]">
+                          <Label className="text-sm font-medium block md:hidden mb-1">
+                            {t("expense.visitInfo.description.label")}
+                          </Label>
                           <Input
                             value={visit.description}
                             onChange={(e) => updateVisit(index, 'description', e.target.value)}
                             placeholder={t("expense.visitInfo.description.placeholder")}
+                            className="h-11"
                           />
                         </div>
 
                         {/* 방문 정보 삭제 버튼 */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeVisit(index)}
-                          className="text-red-500 hover:bg-accent cursor-pointer"
-                          title={t("expense.visitInfo.deleteButton")}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end md:block mt-2 md:mt-0">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeVisit(index)}
+                            className="h-10 w-10 rounded-full text-red-500"
+                            aria-label={t("expense.visitInfo.deleteButton")}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
+                    
+                    {/* 방문지가 없는 경우 안내 메시지 */}
+                    {formData.visits.length === 0 && (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <p>{t("expense.visitInfo.noVisits")}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1306,6 +1345,7 @@ export default function BusinessExpensePage() {
                       onClick={addTransportation}
                       variant="outline"
                       size="sm"
+                      className="h-10 px-4"
                     >
                       {t("expense.transportation.addButton")}
                     </Button>
@@ -1362,26 +1402,26 @@ export default function BusinessExpensePage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
-                                variant="ghost"
-                                size="sm"
+                                variant="outline"
+                                size="icon"
                                 onClick={() => toggleTransportation(index)}
-                                className="cursor-pointer"
+                                className="h-10 w-10 rounded-full"
                               >
                                 {item.isExpanded ? (
-                                  <ChevronUp className="h-4 w-4" />
+                                  <ChevronUp className="h-5 w-5" />
                                 ) : (
-                                  <ChevronDown className="h-4 w-4" />
+                                  <ChevronDown className="h-5 w-5" />
                                 )}
                               </Button>
                               {/* 교통비 정보 삭제 버튼 */}
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="icon"
                                 onClick={() => removeTransportation(index)}
-                                className="text-red-500 hover:bg-accent cursor-pointer"
-                                title={t("expense.transportation.deleteButton")}
+                                className="h-10 w-10 rounded-full text-red-500"
+                                aria-label={t("expense.transportation.deleteButton")}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-5 w-5" />
                               </Button>
                             </div>
                           </div>
@@ -1565,6 +1605,7 @@ export default function BusinessExpensePage() {
                       onClick={addAccommodation}
                       variant="outline"
                       size="sm"
+                      className="h-10 px-4"
                     >
                       {t("expense.accommodation.addButton")}
                     </Button>
@@ -1628,26 +1669,26 @@ export default function BusinessExpensePage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
-                                variant="ghost"
-                                size="sm"
+                                variant="outline"
+                                size="icon"
                                 onClick={() => toggleAccommodation(index)}
-                                className="cursor-pointer"
+                                className="h-10 w-10 rounded-full"
                               >
                                 {item.isExpanded ? (
-                                  <ChevronUp className="h-4 w-4" />
+                                  <ChevronUp className="h-5 w-5" />
                                 ) : (
-                                  <ChevronDown className="h-4 w-4" />
+                                  <ChevronDown className="h-5 w-5" />
                                 )}
                               </Button>
                               {/* 숙박비 정보 삭제 버튼 */}
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="icon"
                                 onClick={() => removeAccommodation(index)}
-                                className="text-red-500 hover:bg-accent cursor-pointer"
-                                title={t("expense.accommodation.deleteButton")}
+                                className="h-10 w-10 rounded-full text-red-500"
+                                aria-label={t("expense.accommodation.deleteButton")}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-5 w-5" />
                               </Button>
                             </div>
                           </div>
@@ -1862,6 +1903,7 @@ export default function BusinessExpensePage() {
                       onClick={addEntertainment}
                       variant="outline"
                       size="sm"
+                      className="h-10 px-4"
                     >
                       {t("expense.entertainment.addButton")}
                     </Button>
@@ -1914,26 +1956,26 @@ export default function BusinessExpensePage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
-                                variant="ghost"
-                                size="sm"
+                                variant="outline"
+                                size="icon"
                                 onClick={() => toggleEntertainment(index)}
-                                className="cursor-pointer"
+                                className="h-10 w-10 rounded-full"
                               >
                                 {item.isExpanded ? (
-                                  <ChevronUp className="h-4 w-4" />
+                                  <ChevronUp className="h-5 w-5" />
                                 ) : (
-                                  <ChevronDown className="h-4 w-4" />
+                                  <ChevronDown className="h-5 w-5" />
                                 )}
                               </Button>
                               {/* 접대비 정보 삭제 버튼 */}
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="icon"
                                 onClick={() => removeEntertainment(index)}
-                                className="text-red-500 hover:bg-accent cursor-pointer"
-                                title={t("expense.entertainment.deleteButton")}
+                                className="h-10 w-10 rounded-full text-red-500"
+                                aria-label={t("expense.entertainment.deleteButton")}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-5 w-5" />
                               </Button>
                             </div>
                           </div>
@@ -2149,6 +2191,18 @@ export default function BusinessExpensePage() {
                     onToggle={toggleMiscellaneous}
                     tripStartDate={formData.startDate ? formatDateForStorage(formData.startDate) : undefined}
                     tripEndDate={formData.endDate ? formatDateForStorage(formData.endDate) : undefined}
+                    buttonStyle={{
+                      collapse: {
+                        variant: "outline",
+                        size: "icon",
+                        className: "h-10 w-10 rounded-full"
+                      },
+                      delete: {
+                        variant: "outline",
+                        size: "icon",
+                        className: "h-10 w-10 rounded-full text-red-500"
+                      }
+                    }}
                   />
                 </CardContent>
               </Card>

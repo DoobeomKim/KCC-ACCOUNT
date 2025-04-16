@@ -249,9 +249,7 @@ export default function BusinessExpenseAttachmentsPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      
+    <div className="flex min-h-screen bg-gray-100">
       <div className="flex-1">
         <div className="p-8">
           <div className="max-w-5xl mx-auto">

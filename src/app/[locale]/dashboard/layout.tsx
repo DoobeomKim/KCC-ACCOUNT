@@ -99,13 +99,15 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto py-6 px-4">
-        {children}
+      <main className="flex-1 w-full">
+        <div className="py-4 px-[5px]">
+          {children}
+        </div>
       </main>
       
       {/* 간단한 푸터 */}
       <footer className="bg-gray-100 py-4">
-        <div className="container mx-auto px-4 text-center text-gray-500 text-sm">
+        <div className="w-full px-[5px] text-center text-gray-500 text-sm">
           &copy; {new Date().getFullYear()} Account System
         </div>
       </footer>

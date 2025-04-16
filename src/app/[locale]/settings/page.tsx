@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import Sidebar from "@/components/layout/Sidebar"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { Check, Save } from "lucide-react"
@@ -245,7 +244,6 @@ export default function SettingsPage() {
   if (isInitialLoad) {
     return (
       <div className="flex min-h-screen bg-gray-100">
-        <Sidebar />
         <div className="flex-1 lg:ml-64">
           <div className="p-8">
             <div className="animate-pulse">
@@ -262,182 +260,178 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64">
-        <div className="p-8 space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{nav('settings')}</h1>
-            <p className="text-gray-500">{t('description')}</p>
-          </div>
-
-          <div className="max-w-3xl">
-            <div className="mb-6 text-sm text-gray-600">
-              {t('roleInfo.message', {
-                email: settings.email,
-                role: t(`roleInfo.${settings.role}`)
-              })}
-            </div>
-
-            <Tabs defaultValue="company" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="company">{t('companyInfo.title')}</TabsTrigger>
-                {settings.role === 'admin' && (
-                  <TabsTrigger value="system">{t('systemSettings.title')}</TabsTrigger>
-                )}
-              </TabsList>
-
-              <TabsContent value="company">
-                <Card>
-                  <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                      <Label>{t('companyInfo.email')}</Label>
-                      <Input 
-                        value={settings.email}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <RequiredLabel>
-                        <Label>{t('companyInfo.companyName')}</Label>
-                      </RequiredLabel>
-                      <Input 
-                        value={settings.company_name}
-                        onChange={(e) => setSettings(prev => ({ 
-                          ...prev, 
-                          company_name: e.target.value 
-                        }))}
-                        placeholder={t('companyInfo.companyNamePlaceholder')}
-                        className={`bg-white ${!settings.company_name && !isInitialLoad ? 'border-red-300' : ''}`}
-                      />
-                      {!settings.company_name && !isInitialLoad && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {t('validation.companyNameRequired')}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <RequiredLabel>
-                        <Label>{t('companyInfo.city')}</Label>
-                      </RequiredLabel>
-                      <Input 
-                        value={settings.city}
-                        onChange={(e) => setSettings(prev => ({ 
-                          ...prev, 
-                          city: e.target.value 
-                        }))}
-                        placeholder={t('companyInfo.cityPlaceholder')}
-                        className={`bg-white ${!settings.city && !isInitialLoad ? 'border-red-300' : ''}`}
-                      />
-                      {!settings.city && !isInitialLoad && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {t('validation.cityRequired')}
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="mt-6 flex justify-end items-center gap-4">
-                  {saveStatus === 'saved' && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <Check className="h-4 w-4" />
-                      <span className="text-sm">{t('status.saved')}</span>
-                    </div>
-                  )}
-                  {saveStatus === 'saving' && (
-                    <div className="text-sm text-gray-600">
-                      {t('status.saving')}
-                    </div>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={handleSave}
-                    className="hover:bg-gray-800 hover:text-white cursor-pointer"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {t('save')}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {settings.role === 'admin' && (
-                <TabsContent value="system">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t('systemSettings.formDataManagement.title')}</CardTitle>
-                      <CardDescription>
-                        {t('systemSettings.formDataManagement.description')}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <RadioGroup
-                          value={systemSettings.formDataPolicy}
-                          onValueChange={(value: FormDataPolicy) => 
-                            setSystemSettings(prev => ({ ...prev, formDataPolicy: value }))
-                          }
-                          className="space-y-4"
-                        >
-                          {Object.entries(policyConfigs).map(([key, config]) => (
-                            <div key={key} className="flex items-start space-x-3">
-                              <RadioGroupItem value={key} id={key} />
-                              <div className="space-y-1">
-                                <Label htmlFor={key} className="text-base font-medium">
-                                  {t(`systemSettings.formDataManagement.options.${key}.label`)}
-                                </Label>
-                                <p className="text-sm text-muted-foreground">
-                                  {t(`systemSettings.formDataManagement.options.${key}.description`)}
-                                </p>
-                                <div className="text-sm text-muted-foreground mt-2">
-                                  <p>{t('systemSettings.formDataManagement.deletionPoints')}</p>
-                                  <ul className="list-disc list-inside ml-2 mt-1">
-                                    {config.clearTriggers.onBrowserClose && 
-                                      <li>{t('systemSettings.formDataManagement.triggers.browserClose')}</li>}
-                                    {config.clearTriggers.onLogout && 
-                                      <li>{t('systemSettings.formDataManagement.triggers.logout')}</li>}
-                                    {config.clearTriggers.onNavigation && 
-                                      <li>{t('systemSettings.formDataManagement.triggers.navigation')}</li>}
-                                    {config.clearTriggers.onRefresh && 
-                                      <li>{t('systemSettings.formDataManagement.triggers.refresh')}</li>}
-                                  </ul>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="mt-6 flex justify-end items-center gap-4">
-                    {saveStatus === 'saved' && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <Check className="h-4 w-4" />
-                        <span className="text-sm">{t('status.saved')}</span>
-                      </div>
-                    )}
-                    {saveStatus === 'saving' && (
-                      <div className="text-sm text-gray-600">
-                        {t('status.saving')}
-                      </div>
-                    )}
-                    <Button 
-                      onClick={handleSystemSettingsSave}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? t('actions.saving') : t('actions.save')}
-                    </Button>
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          </div>
+    <div className="p-4 lg:p-8 space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{nav('settings')}</h1>
+          <p className="text-muted-foreground">{t('description')}</p>
         </div>
+      </div>
+
+      <div className="max-w-3xl">
+        <div className="mb-6 text-sm text-gray-600">
+          {t('roleInfo.message', {
+            email: settings.email,
+            role: t(`roleInfo.${settings.role}`)
+          })}
+        </div>
+
+        <Tabs defaultValue="company" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="company">{t('companyInfo.title')}</TabsTrigger>
+            {settings.role === 'admin' && (
+              <TabsTrigger value="system">{t('systemSettings.title')}</TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="company">
+            <Card>
+              <CardContent className="space-y-4 pt-6">
+                <div className="space-y-2">
+                  <Label>{t('companyInfo.email')}</Label>
+                  <Input 
+                    value={settings.email}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <RequiredLabel>
+                    <Label>{t('companyInfo.companyName')}</Label>
+                  </RequiredLabel>
+                  <Input 
+                    value={settings.company_name}
+                    onChange={(e) => setSettings(prev => ({ 
+                      ...prev, 
+                      company_name: e.target.value 
+                    }))}
+                    placeholder={t('companyInfo.companyNamePlaceholder')}
+                    className={`bg-white ${!settings.company_name && !isInitialLoad ? 'border-red-300' : ''}`}
+                  />
+                  {!settings.company_name && !isInitialLoad && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {t('validation.companyNameRequired')}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <RequiredLabel>
+                    <Label>{t('companyInfo.city')}</Label>
+                  </RequiredLabel>
+                  <Input 
+                    value={settings.city}
+                    onChange={(e) => setSettings(prev => ({ 
+                      ...prev, 
+                      city: e.target.value 
+                    }))}
+                    placeholder={t('companyInfo.cityPlaceholder')}
+                    className={`bg-white ${!settings.city && !isInitialLoad ? 'border-red-300' : ''}`}
+                  />
+                  {!settings.city && !isInitialLoad && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {t('validation.cityRequired')}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="mt-6 flex justify-end items-center gap-4">
+              {saveStatus === 'saved' && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <Check className="h-4 w-4" />
+                  <span className="text-sm">{t('status.saved')}</span>
+                </div>
+              )}
+              {saveStatus === 'saving' && (
+                <div className="text-sm text-gray-600">
+                  {t('status.saving')}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                className="hover:bg-gray-800 hover:text-white cursor-pointer"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {t('save')}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {settings.role === 'admin' && (
+            <TabsContent value="system">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('systemSettings.formDataManagement.title')}</CardTitle>
+                  <CardDescription>
+                    {t('systemSettings.formDataManagement.description')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <RadioGroup
+                      value={systemSettings.formDataPolicy}
+                      onValueChange={(value: FormDataPolicy) => 
+                        setSystemSettings(prev => ({ ...prev, formDataPolicy: value }))
+                      }
+                      className="space-y-4"
+                    >
+                      {Object.entries(policyConfigs).map(([key, config]) => (
+                        <div key={key} className="flex items-start space-x-3">
+                          <RadioGroupItem value={key} id={key} />
+                          <div className="space-y-1">
+                            <Label htmlFor={key} className="text-base font-medium">
+                              {t(`systemSettings.formDataManagement.options.${key}.label`)}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t(`systemSettings.formDataManagement.options.${key}.description`)}
+                            </p>
+                            <div className="text-sm text-muted-foreground mt-2">
+                              <p>{t('systemSettings.formDataManagement.deletionPoints')}</p>
+                              <ul className="list-disc list-inside ml-2 mt-1">
+                                {config.clearTriggers.onBrowserClose && 
+                                  <li>{t('systemSettings.formDataManagement.triggers.browserClose')}</li>}
+                                {config.clearTriggers.onLogout && 
+                                  <li>{t('systemSettings.formDataManagement.triggers.logout')}</li>}
+                                {config.clearTriggers.onNavigation && 
+                                  <li>{t('systemSettings.formDataManagement.triggers.navigation')}</li>}
+                                {config.clearTriggers.onRefresh && 
+                                  <li>{t('systemSettings.formDataManagement.triggers.refresh')}</li>}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="mt-6 flex justify-end items-center gap-4">
+                {saveStatus === 'saved' && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <Check className="h-4 w-4" />
+                    <span className="text-sm">{t('status.saved')}</span>
+                  </div>
+                )}
+                {saveStatus === 'saving' && (
+                  <div className="text-sm text-gray-600">
+                    {t('status.saving')}
+                  </div>
+                )}
+                <Button 
+                  onClick={handleSystemSettingsSave}
+                  disabled={isLoading}
+                >
+                  {isLoading ? t('actions.saving') : t('actions.save')}
+                </Button>
+              </div>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   )

@@ -1834,9 +1834,8 @@ function BusinessExpenseSummaryContent() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <Sidebar />
-      <div className="flex-1 lg:ml-64">
+    <div className="flex min-h-screen bg-gray-100">
+      <div className="flex-1">
         <div className="p-8 bg-white">
           <div className="container mx-auto py-6">
             {/* 상단 버튼 영역 */}
