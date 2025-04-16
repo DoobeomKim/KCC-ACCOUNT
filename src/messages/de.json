@@ -21,7 +21,7 @@
     "logout": "Abmelden",
     "countryAllowances": "Länderspezifische Reisekosten",
     "status": {
-      "loggedInAs": "Aktuell eingeloggt: {email}"
+      "loggedInAs": "Aktuell eingeloggt:"
     }
   },
   "settings": {
@@ -130,6 +130,7 @@
     "visitInfo": {
       "title": "Besuchsinformationen",
       "addButton": "+ Besuch hinzufügen",
+      "selectDate": "Datum",
       "date": "Datum",
       "companyName": {
         "label": "Firma",
@@ -387,10 +388,14 @@
   },
   "countryAllowances": {
     "title": "Länderspezifische Reisekosten",
+    "description": "Verwalten Sie die Reisekosten nach Ländern.",
     "buttons": {
-      "excelDownload": "Excel herunterladen",
-      "excelUpload": "Excel hochladen",
-      "add": "Neu hinzufügen"
+      "excelDownload": "Herunterladen",
+      "excelUpload": "Hochladen",
+      "add": "Hinzufügen"
+    },
+    "stats": {
+      "totalCountries": "Alle Länder"
     },
     "table": {
       "headers": {

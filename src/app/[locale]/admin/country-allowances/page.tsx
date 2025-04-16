@@ -488,8 +488,8 @@ export default function CountryAllowancesPage() {
     <div className="p-4 lg:p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">국가별 출장 비용</h1>
-          <p className="text-[12px] md:text-sm text-gray-500">국가별 출장 비용을 관리합니다.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('countryAllowances.title')}</h1>
+          <p className="text-[12px] md:text-sm text-gray-500">{t('countryAllowances.description')}</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -499,13 +499,13 @@ export default function CountryAllowancesPage() {
             disabled={isDownloading}
           >
             <Download className="h-3 w-3 md:h-4 md:w-4" />
-            내보내기
+            {t('countryAllowances.buttons.excelDownload')}
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Upload className="h-3 w-3 md:h-4 md:w-4" />
-                불러오기
+                {t('countryAllowances.buttons.excelUpload')}
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -548,7 +548,7 @@ export default function CountryAllowancesPage() {
             onClick={() => setIsAddModalOpen(true)}
           >
             <Plus className="h-3 w-3 md:h-4 md:w-4" />
-            새로 추가
+            {t('countryAllowances.buttons.add')}
           </Button>
         </div>
       </div>

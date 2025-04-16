@@ -29,6 +29,7 @@ interface NavItem {
   href: string
   icon: React.ComponentType<{ className?: string }>
   label: string
+  resetSession?: boolean
 }
 
 interface SidebarProps {
@@ -69,6 +70,15 @@ export default function Sidebar({ isMobile = false }: SidebarProps) {
     window.location.href = `/${locale}/auth/login`
   }
 
+  // 출장 경비 입력 버튼 클릭 핸들러
+  const handleExpenseInputClick = () => {
+    // 세션 스토리지 초기화 - 기존 입력 데이터와 편집 ID 제거
+    sessionStorage.removeItem('expenseFormData')
+    sessionStorage.removeItem('expenseEditId')
+    setIsOpen(false)
+    router.push(`/${locale}/business-expense`)
+  }
+
   const navItems: NavItem[] = [
     {
       href: `/${locale}/dashboard`,
@@ -78,7 +88,8 @@ export default function Sidebar({ isMobile = false }: SidebarProps) {
     {
       href: `/${locale}/business-expense`,
       icon: Receipt,
-      label: t('businessExpense')
+      label: t('businessExpense'),
+      resetSession: true
     },
     {
       href: `/${locale}/expense-list`,
@@ -101,6 +112,27 @@ export default function Sidebar({ isMobile = false }: SidebarProps) {
     <nav className="space-y-1">
       {navItems.map((item) => {
         const isActive = pathname === item.href
+        
+        // 출장 경비 입력 버튼은 커스텀 핸들러 사용
+        if (item.resetSession) {
+          return (
+            <a
+              key={item.href}
+              onClick={handleExpenseInputClick}
+              className={cn(
+                'flex items-center gap-3 px-4 py-3 text-sm rounded-lg transition-colors min-h-[48px] cursor-pointer',
+                isActive 
+                  ? 'bg-gray-800 text-white font-medium' 
+                  : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-800'
+              )}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <span className="flex-1">{item.label}</span>
+            </a>
+          )
+        }
+        
+        // 기본 네비게이션 링크
         return (
           <Link
             key={item.href}
@@ -129,8 +161,8 @@ export default function Sidebar({ isMobile = false }: SidebarProps) {
       </div>
       {userEmail && (
         <div className="text-sm text-gray-300 break-all">
-          <div className="text-xs text-gray-400">현재 로그인 중</div>
-          <div>{userEmail}</div>
+          <div className="text-xs text-gray-400">{t("status.loggedInAs", { email: userEmail })}</div>
+          <div className="font-medium mt-0.5">{userEmail}</div>
         </div>
       )}
     </div>

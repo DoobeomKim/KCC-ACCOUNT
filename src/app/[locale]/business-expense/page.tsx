@@ -300,13 +300,20 @@ const initialFormData: ExpenseForm = {
     purpose: '',
     projectName: '',
     projectNumber: '',
-    mealOption: false,
+    mealOption: true,  // false에서 true로 변경하여 기본값이 "Wird bezahlt"가 되도록 함
     entertainment: [],
     mileage: [],
     otherExpenses: [],
     totalMealAllowance: 0,
     dailyAllowances: [],  // 추가
-    visits: [],           // 추가 - 방문 정보
+    visits: [{            // 기본적으로 빈 방문 정보 한 줄 추가
+      date: undefined,
+      companyName: '',
+      city: '',
+      description: '',
+      isExpanded: true,   // 초기 상태를 펼쳐진 상태로 설정
+      datePickerOpen: false
+    }],
     transportation: [],   // 추가 - 교통비 정보
     accommodation: [],    // 추가 - 숙박비 정보
     meals: [],            // 추가 - 식사 정보
@@ -369,13 +376,20 @@ export default function BusinessExpensePage() {
     purpose: '',
     projectName: '',
     projectNumber: '',
-    mealOption: false,
+    mealOption: true,  // false에서 true로 변경하여 기본값이 "Wird bezahlt"가 되도록 함
     entertainment: [],
     mileage: [],
     otherExpenses: [],
     totalMealAllowance: 0,
     dailyAllowances: [],  // 추가
-    visits: [],           // 추가 - 방문 정보
+    visits: [{            // 기본적으로 빈 방문 정보 한 줄 추가
+      date: undefined,
+      companyName: '',
+      city: '',
+      description: '',
+      isExpanded: true,   // 초기 상태를 펼쳐진 상태로 설정
+      datePickerOpen: false
+    }],
     transportation: [],   // 추가 - 교통비 정보
     accommodation: [],    // 추가 - 숙박비 정보
     meals: [],            // 추가 - 식사 정보
@@ -460,6 +474,54 @@ export default function BusinessExpensePage() {
               date: parseDateFromStorage(item.date)
             })) || []
           };
+          
+          // calculatedTotals에서 mealAllowanceInfo와 dailyAllowances 복원
+          if (parsedData.calculatedTotals) {
+            try {
+              // calculatedTotals가 문자열인 경우 파싱
+              let ctData = parsedData.calculatedTotals;
+              if (typeof ctData === 'string') {
+                ctData = JSON.parse(ctData);
+              }
+              
+              // mealAllowanceInfo 복원
+              if (ctData.mealAllowanceInfo) {
+                processedData.mealAllowanceInfo = ctData.mealAllowanceInfo;
+                console.log('mealAllowanceInfo 복원 성공:', Object.keys(ctData.mealAllowanceInfo).length);
+              }
+              
+              // dailyAllowances 복원
+              if (ctData.dailyAllowances) {
+                processedData.dailyAllowances = ctData.dailyAllowances;
+                console.log('dailyAllowances 복원 성공:', ctData.dailyAllowances.length);
+              }
+            } catch (e) {
+              console.error('calculatedTotals 처리 오류:', e);
+            }
+          }
+          
+          // 직접 mealAllowanceInfo와 dailyAllowances가 있는 경우
+          if (parsedData.mealAllowanceInfo) {
+            processedData.mealAllowanceInfo = parsedData.mealAllowanceInfo;
+            console.log('직접 mealAllowanceInfo 설정 완료:', Object.keys(parsedData.mealAllowanceInfo).length);
+          }
+          
+          if (parsedData.dailyAllowances) {
+            processedData.dailyAllowances = parsedData.dailyAllowances;
+            console.log('직접 dailyAllowances 설정 완료:', parsedData.dailyAllowances.length);
+          }
+          
+          // 방문 정보가 없는 경우 기본 방문 정보 추가
+          if (processedData.visits.length === 0) {
+            processedData.visits = [{
+              date: undefined,
+              companyName: '',
+              city: '',
+              description: '',
+              isExpanded: true,
+              datePickerOpen: false
+            }];
+          }
           
           console.log('데이터 처리 완료:', {
             시작일: processedData.startDate,

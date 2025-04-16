@@ -21,12 +21,13 @@
     "logout": "로그아웃",
     "countryAllowances": "국가별 출장 비용 관리",
     "status": {
-      "loggedInAs": "현재 로그인 중: {email}"
+      "loggedInAs": "현재 로그인 중:"
     }
   },
   "settings": {
     "title": "설정",
     "description": "계정 설정 및 환경설정을 관리합니다.",
+    "save": "변경사항 저장",
     "roleInfo": {
       "admin": "관리자",
       "user": "일반 사용자",
@@ -160,6 +161,7 @@
     "visitInfo": {
       "title": "방문지 정보",
       "addButton": "+ 방문지 추가",
+      "selectDate": "날짜",
       "date": "날짜",
       "companyName": {
         "label": "방문 회사",
