@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { defaultLocale } from '@/i18n/settings'
+import AppLayout from '@/components/layout/AppLayout'
 
 export default function DashboardLayout({
   children,
@@ -97,20 +98,5 @@ export default function DashboardLayout({
     )
   }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 w-full">
-        <div className="py-4 px-[5px]">
-          {children}
-        </div>
-      </main>
-      
-      {/* 간단한 푸터 */}
-      <footer className="bg-gray-100 py-4">
-        <div className="w-full px-[5px] text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} Account System
-        </div>
-      </footer>
-    </div>
-  )
+  return <AppLayout>{children}</AppLayout>
 } 

@@ -355,7 +355,6 @@ export default function BusinessExpensePage() {
   const t = useTranslations()
   const router = useRouter()
   const params = useParams()
-  const pathname = usePathname()
   const locale = (params?.locale as string) || defaultLocale
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -423,88 +422,66 @@ export default function BusinessExpensePage() {
   
   // 데이터 로드 함수
   useEffect(() => {
-    // URL이 기본 business-expense 페이지인 경우 세션 스토리지 초기화
-    if (pathname === `/${locale}/business-expense`) {
-      console.log('새로운 폼 시작: 세션 스토리지 초기화');
-      sessionStorage.removeItem('expenseFormData');
-      sessionStorage.removeItem('expenseEditId');
-      setFormData({
-        name: '',
-        startDate: undefined,
-        endDate: undefined,
-        startTime: undefined,
-        endTime: undefined,
-        city: '',
-        description: '',
-        purpose: '',
-        projectName: '',
-        projectNumber: '',
-        mealOption: false,
-        entertainment: [],
-        mileage: [],
-        otherExpenses: [],
-        totalMealAllowance: 0,
-        dailyAllowances: [],
-        visits: [],
-        transportation: [],
-        accommodation: [],
-        meals: [],
-        miscellaneous: [],
-        mealAllowanceInfo: {}
-      });
-    } else {
-      const loadSavedData = () => {
-        try {
-          // 세션 스토리지에서 데이터 로드
-          const savedData = sessionStorage.getItem('expenseFormData');
-          console.log('세션 스토리지 데이터 확인:', !!savedData);
+    const loadSavedData = () => {
+      try {
+        // 세션 스토리지에서 데이터 로드
+        const savedData = sessionStorage.getItem('expenseFormData');
+        console.log('세션 스토리지 데이터 확인:', !!savedData);
 
-          if (savedData) {
-            const parsedData = JSON.parse(savedData);
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
             console.log('데이터 파싱 성공');
             
-            // 날짜 데이터 변환
-            const processedData = {
-              ...parsedData,
-              startDate: parseDateFromStorage(parsedData.startDate),
-              endDate: parseDateFromStorage(parsedData.endDate),
-              visits: parsedData.visits?.map((visit: any) => ({
-                ...visit,
-                date: parseDateFromStorage(visit.date)
-              })) || [],
-              transportation: parsedData.transportation?.map((item: any) => ({
-                ...item,
-                date: parseDateFromStorage(item.date)
-              })) || [],
-              accommodation: parsedData.accommodation?.map((item: any) => ({
-                ...item,
-                startDate: parseDateFromStorage(item.startDate),
-                endDate: parseDateFromStorage(item.endDate),
-                breakfastDates: item.breakfastDates?.map((date: string) => parseDateFromStorage(date)) || []
-              })) || [],
-              entertainment: parsedData.entertainment?.map((item: any) => ({
-                ...item,
-                date: parseDateFromStorage(item.date)
-              })) || [],
-              miscellaneous: parsedData.miscellaneous?.map((item: any) => ({
-                ...item,
-                date: parseDateFromStorage(item.date)
-              })) || []
-            };
-            
-            setFormData(processedData);
-          }
-        } catch (error) {
-          console.error('저장된 데이터 로드 중 오류:', error);
-          toast.error('저장된 데이터를 불러오는데 실패했습니다.');
+          // 날짜 데이터 변환
+          const processedData = {
+            ...parsedData,
+            startDate: parseDateFromStorage(parsedData.startDate),
+            endDate: parseDateFromStorage(parsedData.endDate),
+            visits: parsedData.visits?.map((visit: any) => ({
+              ...visit,
+              date: parseDateFromStorage(visit.date)
+            })) || [],
+            transportation: parsedData.transportation?.map((item: any) => ({
+              ...item,
+              date: parseDateFromStorage(item.date)
+            })) || [],
+            accommodation: parsedData.accommodation?.map((item: any) => ({
+              ...item,
+              startDate: parseDateFromStorage(item.startDate),
+              endDate: parseDateFromStorage(item.endDate),
+              breakfastDates: item.breakfastDates?.map((date: string) => parseDateFromStorage(date)) || []
+            })) || [],
+            entertainment: parsedData.entertainment?.map((item: any) => ({
+              ...item,
+              date: parseDateFromStorage(item.date)
+            })) || [],
+            miscellaneous: parsedData.miscellaneous?.map((item: any) => ({
+              ...item,
+              date: parseDateFromStorage(item.date)
+            })) || []
+          };
+          
+          console.log('데이터 처리 완료:', {
+            시작일: processedData.startDate,
+            종료일: processedData.endDate,
+            방문지수: processedData.visits.length,
+            교통비항목수: processedData.transportation.length,
+            숙박비항목수: processedData.accommodation.length,
+            접대비항목수: processedData.entertainment.length
+          });
+          
+          setFormData(processedData);
         }
-      };
+      } catch (error) {
+        console.error('저장된 데이터 로드 중 오류:', error);
+        toast.error('저장된 데이터를 불러오는데 실패했습니다.');
+      }
+    };
 
-      // 데이터 로드 실행
-      loadSavedData();
-    }
-    
-    // 국가 옵션 로드
+    // 데이터 로드 실행
+    loadSavedData();
+          
+          // 국가 옵션 로드
     const fetchCountryOptions = async () => {
       try {
         const { data: countries, error } = await supabase
@@ -541,7 +518,7 @@ export default function BusinessExpensePage() {
     
     fetchCountryOptions();
     setIsInitialLoad(false);
-  }, [pathname, locale]);
+  }, []);
   
   // 데이터 변경 시 저장
   const updateFormData = (key: keyof ExpenseForm, value: any) => {

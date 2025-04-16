@@ -1,12 +1,8 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import { locales, defaultLocale } from '@/i18n/settings';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
-import MobileHeader from '@/components/layout/MobileHeader';
-import Sidebar from '@/components/layout/Sidebar';
-import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -82,28 +78,13 @@ export default async function LocaleLayout({
   }
 
   console.log('🌐 [3. 로케일 레이아웃] 레이아웃 렌더링 완료');
+  
   return (
     <html lang={locale}>
       <body className={inter.className}>
         <div suppressHydrationWarning>
           <NextIntlClientProvider locale={locale} messages={messages}>
-            <div className="min-h-screen">
-              {/* 모바일 헤더 */}
-              <MobileHeader />
-              
-              {/* 데스크톱 사이드바 */}
-              <div className="hidden lg:block fixed left-0 top-0 h-screen w-72 bg-gray-900">
-                <Sidebar />
-              </div>
-
-              <div className="lg:pl-72">
-                <main className="min-h-screen w-full">
-                  <div className="w-full py-8 px-[5px] mt-16 lg:mt-0">
-                    {children}
-                  </div>
-                </main>
-              </div>
-            </div>
+            {children}
           </NextIntlClientProvider>
         </div>
       </body>
