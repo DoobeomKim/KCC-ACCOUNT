@@ -45,6 +45,7 @@ export default function Sidebar({ isMobile = false }: SidebarProps) {
   const locale = pathname.split('/')[1]
 
   useEffect(() => {
+    // 초기 세션 확인
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.email) {
@@ -61,7 +62,36 @@ export default function Sidebar({ isMobile = false }: SidebarProps) {
         }
       }
     }
+
+    // 세션 변경 감지
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email)
+        // 사용자 권한 확인
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('email', session.user.email)
+          .single()
+
+        if (userProfile) {
+          setUserRole(userProfile.role)
+        }
+      } else {
+        setUserEmail(null)
+        setUserRole('')
+      }
+    })
+
+    // 초기 세션 확인 실행
     getSession()
+
+    // 컴포넌트 언마운트 시 구독 해제
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const handleLogout = async () => {

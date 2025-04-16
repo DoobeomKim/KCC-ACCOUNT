@@ -1,10 +1,12 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { locales, defaultLocale } from '@/i18n/settings';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import MobileHeader from '@/components/layout/MobileHeader';
 import Sidebar from '@/components/layout/Sidebar';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
